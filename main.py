@@ -62,21 +62,21 @@ def main():
     client = ModelClient(ModelClient.MODELS.QWEN_3_8B, system_message=SYSTEM_PROMPT)
 
     resume_text = RESUME
-    with open('data/resume.txt', 'r') as file:
+    with open('input/resume.txt', 'r') as file:
         resume_text = file.read()
 
     print("Providing resume to the model...")
     client.chat(RESUME_PROMPT.format(resume=resume_text))
 
     cover_letter_text = COVER_LETTER
-    with open('data/cover_letter.txt', 'r') as file:
+    with open('input/cover_letter.txt', 'r') as file:
         cover_letter_text = file.read()
 
     print("Providing example cover letter to the model...")
     client.chat(EXAMPLE_COVER_LETTER_PROMPT.format(cover_letter=cover_letter_text))
 
     job_description_text = JOB_DESCRIPTION
-    with open('data/job_description.txt', 'r') as file:
+    with open('input/job_description.txt', 'r') as file:
         job_description_text = file.read()
 
     print("Generating cover letter...")
