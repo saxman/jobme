@@ -86,3 +86,51 @@ resume_content.md  cover_letter.txt  summary.md          trace.json
 ```
 
 Run it once per new job posting.
+
+## Use jobme with your own private data (private mirror)
+
+To run jobme on your real CV without committing it here, create a **private mirror** repo
+that tracks this project. (GitHub won't make a *private* fork of a public repo, and you
+can't fork a repo into the account that already owns it — so use a mirror, not the Fork
+button.) Your real files stay in a separate `me/` folder on a branch, so the committed
+samples in `input/` are never overwritten and upstream updates merge cleanly.
+
+1. Create an empty **private** repo on GitHub, e.g. `you/jobme-private`.
+2. Clone this project **as a sibling of `aimu`** (so the `../aimu` path dependency in
+   `pyproject.toml` still resolves) and wire two remotes:
+
+   ```
+   git clone https://github.com/saxman/jobme.git jobme-private
+   cd jobme-private
+   git remote rename origin upstream                        # updates come FROM here
+   git remote add origin https://github.com/you/jobme-private.git
+   git push -u origin main                                  # main = a clean mirror
+   ```
+
+3. Keep your data on its own branch:
+
+   ```
+   git switch -c personal
+   mkdir me     # add your real cv.md, resume.html, cover_letter*.txt here
+   git add me && git commit -m "My CV and resume" && git push -u origin personal
+   ```
+
+4. Run against your data (the `input/` samples stay untouched):
+
+   ```
+   uv run scripts/tailor.py --jd path/to/posting.txt --input-dir me
+   ```
+
+5. Pull in updates later — refresh the mirror, then merge into your branch:
+
+   ```
+   git fetch upstream
+   git switch main && git merge --ff-only upstream/main && git push
+   git switch personal && git merge main && uv sync && git push
+   ```
+
+   You can also refresh `main` entirely on GitHub (no clone needed) with:
+   `gh repo sync you/jobme-private --source saxman/jobme --branch main`.
+
+Only ever **push to `origin`** and **fetch from `upstream`** — that guarantees your private
+data never reaches the public project.
