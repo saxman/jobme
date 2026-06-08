@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!--
+  EXAMPLE FILE — replace this with your own styled HTML resume before running jobme.
+  This file is the STYLE/FORMAT template: the pipeline reuses its CSS, layout, fonts,
+  and structure when rendering the tailored two-page resume. The text content here is
+  only placeholder; what gets used as content comes from input/cv.md.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Jane Q. Candidate — Resume</title>
+<style>
+  @page { size: Letter; margin: 0.5in; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    color: #1a1a1a;
+    font-size: 10.5pt;
+    line-height: 1.35;
+    margin: 0;
+  }
+  header { border-bottom: 2px solid #2b5797; padding-bottom: 8px; margin-bottom: 14px; }
+  h1 { font-size: 22pt; margin: 0 0 2px; color: #2b5797; letter-spacing: 0.5px; }
+  .contact { font-size: 9pt; color: #444; }
+  h2 {
+    font-size: 11pt; text-transform: uppercase; letter-spacing: 1px;
+    color: #2b5797; border-bottom: 1px solid #ccc;
+    padding-bottom: 2px; margin: 14px 0 6px;
+  }
+  .role { display: flex; justify-content: space-between; font-weight: bold; }
+  .role .dates { font-weight: normal; color: #555; font-style: italic; }
+  .org { color: #2b5797; font-weight: bold; }
+  ul { margin: 4px 0 10px; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+  .skills span { display: inline-block; margin-right: 4px; }
+  section { break-inside: avoid; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Jane Q. Candidate</h1>
+    <div class="contact">
+      example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
+    </div>
+  </header>
+
+  <section>
+    <h2>Summary</h2>
+    <p>Senior software engineer with 9+ years building reliable backend systems and
+       developer tooling, with strength in distributed systems and API design.</p>
+  </section>
+
+  <section>
+    <h2>Skills</h2>
+    <p class="skills"><strong>Languages:</strong> Python, Go, TypeScript, SQL ·
+       <strong>Infra:</strong> AWS, GCP, Kubernetes, Terraform ·
+       <strong>Data:</strong> PostgreSQL, Kafka, BigQuery</p>
+  </section>
+
+  <section>
+    <h2>Experience</h2>
+
+    <div class="role"><span><span class="org">Northstar Logistics</span> — Staff Software Engineer</span>
+      <span class="dates">Jan 2021 – Present</span></div>
+    <ul>
+      <li>Led redesign of order-routing service, cutting p99 latency 1.2s → 280ms.</li>
+      <li>Introduced an observability standard adopted by 6 teams.</li>
+    </ul>
+
+    <div class="role"><span><span class="org">Brightwave Analytics</span> — Senior Software Engineer</span>
+      <span class="dates">Jun 2017 – Dec 2020</span></div>
+    <ul>
+      <li>Built a streaming ingestion pipeline handling 2B events/day.</li>
+      <li>Designed the public API used by 300+ customers.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Education</h2>
+    <p><strong>B.S., Computer Science</strong> — State University, 2015.</p>
+  </section>
+</body>
+</html>

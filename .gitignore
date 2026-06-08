@@ -207,4 +207,10 @@ marimo/_lsp/
 __marimo__/
 
 # project-specific ignores
-input/
+# Generated, per-job results are never committed.
+output/
+# Everything the user drops into input/ stays private (real CV, cover letters,
+# job descriptions) -- except the two committed starter examples below.
+input/*
+!input/cv.md
+!input/resume.html
