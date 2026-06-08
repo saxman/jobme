@@ -32,7 +32,7 @@ def load_inputs(input_dir: Path, jd_path: Path) -> Inputs:
     resume = _read(input_dir / "resume.html", "HTML resume (input/resume.html)")
     jd = _read(jd_path, "job description")
 
-    # Cover letters are optional: cover_letter1.txt, cover_letter2.txt, ... (flat, .txt).
+    # Cover letters are optional: cover_letter-1.txt, cover_letter-2.txt, ... (flat, .txt).
     samples: list[str] = []
     for path in sorted(input_dir.glob("cover_letter*.txt")):
         text = path.read_text(encoding="utf-8").strip()

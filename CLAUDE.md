@@ -14,8 +14,8 @@ the LLM providers. Python >=3.11, managed with **uv**.
 uv sync                              # install deps (incl. aimu from PyPI)
 uv run playwright install chromium   # one-time, for the default PDF backend
 
-# Run the pipeline (the package's only real entry point):
-uv run scripts/tailor.py --jd path/to/posting.txt [--input-dir me --output-dir me/output]
+# Run the pipeline (the package's only real entry point; defaults to input/ and output/):
+uv run scripts/tailor.py --jd path/to/posting.txt [--input-dir DIR --output-dir DIR]
 ```
 
 There is **no automated test suite**. Verify changes by running the pipeline end-to-end.
@@ -59,8 +59,10 @@ CLI ([scripts/tailor.py](scripts/tailor.py) → [jobme/cli.py](jobme/cli.py)) bu
   `DEFAULT_PDF_BACKEND`, `MAX_REVIEW_ROUNDS`, `MAX_PAGE_FIT_RETRIES`, `TARGET_RESUME_PAGES`.
 - **PDF backends** are lazily imported so a missing one only errors when selected.
   `weasyprint` needs GTK native libs on Windows; `playwright` is the default.
-- **`input/cv.md` and `input/resume.html` are committed EXAMPLES** — never replace them with
-  real personal data. `.gitignore` ignores the rest of `input/` and `/output/` (anchored to
-  the repo root). Real use happens in a private mirror via a `me/` folder (see README).
+- **`example/` is the committed demo** (synthetic inputs + a sample run in `example/output/`).
+  Nothing else is git-ignored: `input/` and `output/` are tracked, but this public repo
+  commits nothing to them. Real use happens in a **private mirror**, where the user's real CV
+  and runs live in `input/`/`output/` (committed there only). Never commit real personal data
+  to this public project; do real runs in the mirror.
 - This public repo is meant to be mirrored into private copies that `git fetch upstream`;
   keep changes mergeable and don't commit personal data here.

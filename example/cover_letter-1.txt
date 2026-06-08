@@ -1,0 +1,16 @@
+Dear Hiring Team,
+
+I have spent the last decade quietly obsessed with one thing: making backend systems that
+people can trust. When a pager stays silent through a holiday weekend, that is the work I
+am proudest of.
+
+What draws me to your team is the chance to own reliability at scale, not as an
+afterthought but as a first-class feature. In my current role I cut our p99 latency by
+more than three quarters and gave six teams a shared language for observability. I would
+love to bring that same pragmatism to your shipping systems.
+
+I write clearly, I mentor generously, and I measure what I ship. I would welcome the
+chance to talk about how I can help.
+
+Warmly,
+Jane

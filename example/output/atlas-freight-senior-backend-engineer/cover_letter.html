@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Jane Q. Candidate — Cover Letter</title>
+<style>
+  @page { size: Letter; margin: 0.5in; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    color: #1a1a1a;
+    font-size: 10.5pt;
+    line-height: 1.45; /* Increased for cover letter readability */
+    margin: 0;
+    padding-bottom: 2em;
+  }
+  header { border-bottom: 2px solid #2b5797; padding-bottom: 8px; margin-bottom: 16px; display:flex; flex-direction:column;} 
+  h1 { font-size: 24pt; color: #2b5797; letter-spacing: 0.5px; }
+  .contact { font-size: 8pt; color: #3a3a3c; margin-bottom:6px; padding-left: 1ch;} /* Indented like a footer signature */ 
+  p, li { text-align: left; }
+  
+  section { break-inside: avoid; display:block; margin-bottom:20px;}
+  
+  h3.slate-title { font-size: 9pt; color:#666; border:none; padding-top:5px;} /* Optional separator header */ 
+</style>
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "Person"
+}
+</script>
+</head>
+<body>
+
+<header class="header-block">
+  <h1>Jane Q. Candidate</h1>
+  
+  <!-- 
+     NOTE: Contact details from Resume Exemplar kept as placeholders to maintain layout integrity,
+     but specific letter sign-off at bottom replaces header info visually for formal documents.
+  -->
+  <div class="contact">example@example.com · (555) 123-4567 · San Francisco, CA</div>
+  
+  <!-- Signature area handled below in content to ensure print layout flows correctly -->
+
+</header>
+
+<!-- Salutation Block -->
+<section>
+   <p style="font-style:italic; margin-top:-0.8em; color:#2b5797;"><strong>Dear Hiring Team,</strong></p> 
+</section>
+
+<div class="content-block">
+
+  <!-- Introduction Paragraph -->
+  <div class="section-content">
+    <p>I have spent the last decade quietly obsessed with making backend systems that people can trust. When a pager stays silent through peak routing volume, that is work I am proudest of. Atlas Freight needs engineers who own reliability at scale as a first-class feature rather than an afterthought.</p>
+
+    <!-- Experience/Impact Paragraph (Split into paragraphs for readability vs list) -->
+    <div class="section-content">
+        <p>In my current role leading logistics software for Northstar Logistics, I redesigned the order-routing service to cut p99 latency from 1.2s down to 280ms and introduced observability standards adopted by six teams. Earlier at Brightwave Analytics, I built streaming ingestion pipelines in Go handling two billion events per day while reducing cloud spend twenty-five percent through right-sizing policies.</p>
+        
+        <p>I mentor generously—helping two of four engineers achieve promotions within eighteen months—and measure what ships on the platform. My background with Kafka and PostgreSQL aligns well with your requirements to track high-volume shipments. I would welcome the chance to talk about how my work can support Atlas Freight's systems.</p>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Sign-off Block -->
+<div style="text-align:right; margin-top:3em;">
+   <hr /> <!-- Separator line for letter head, or just whitespace -->
+</div>
+    
+  <section class="signature-block" style="margin-left:5ch"> 
+    <p><strong>Jane Q. Candidate</strong></p>
+  </section>
+
+<style> /* Inline override to ensure signature block aligns right */ .content-block { display:inline; } section.signature-block{ width:30%; }</style>
+
+<footer class="signature-area" style="margin-top:-2em;"> 
+    <!-- The 'Warmly' is often part of the body or separate. Following standard letter format with explicit sign-off below -->
+</footer>
+
+
+<div class="contact"> Warmly,</div> 
+
+<!-- Manual adjustment for proper vertical spacing at bottom to handle print cut-offs if necessary, though 0.5in page margins usually suffice -->
+
+<style> /* Final override of layout */ header { margin-bottom:32px; } .section-content > p { padding-top:4px;} section.signature-block{ width:auto; border:none} </style>
+</body>
+</html>

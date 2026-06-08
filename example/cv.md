@@ -2,8 +2,12 @@
 
 example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
 
-> **EXAMPLE FILE — replace this with your real, comprehensive CV before running jobme.**
-> This markdown CV is the *content* source of truth: include everything (full history,
+> **DEMO FILE — do NOT replace this with your real CV.** It's a sample so jobme runs out of
+> the box and shows the expected format. For real use, keep your own `cv.md` outside the
+> tracked examples — in a private mirror's `me/` folder (see README) or any `--input-dir` —
+> so your personal data is never committed.
+>
+> The markdown CV is the *content* source of truth: include everything (full history,
 > detail, metrics). The pipeline selects and rephrases from here to fit each job — it
 > will never invent facts that are not present in this file.
 

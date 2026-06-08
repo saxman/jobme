@@ -1,0 +1,18 @@
+Senior Backend Engineer — Atlas Freight (Remote, US)
+
+Atlas Freight is hiring a Senior Backend Engineer to scale the systems that route and
+track millions of shipments. You will own services end to end and help set our
+reliability and observability standards.
+
+Responsibilities:
+- Design and operate high-throughput distributed services (routing, tracking, events).
+- Improve latency and reliability of customer-facing APIs.
+- Drive observability practices and reduce on-call burden across teams.
+- Mentor engineers and raise the bar on code quality.
+
+Requirements:
+- 7+ years building backend systems in production.
+- Strong with Go and/or Python, and cloud platforms (AWS or GCP).
+- Experience with event streaming (Kafka) and relational databases (PostgreSQL).
+- Track record of measurable performance and reliability improvements.
+- Excellent written communication.

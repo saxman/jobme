@@ -207,11 +207,7 @@ marimo/_lsp/
 __marimo__/
 
 # project-specific ignores
-# Generated, per-job results are never committed (anchored to the repo root so a
-# private mirror can still track its own me/output/ runs if it wants to).
-/output/
-# Everything the user drops into input/ stays private (real CV, cover letters,
-# job descriptions) -- except the two committed starter examples below.
-input/*
-!input/cv.md
-!input/resume.html
+# This public project commits NO personal data: the bundled demo lives in example/
+# (inputs) and example/output/ (a sample run). input/ and output/ are intentionally NOT
+# ignored -- in a PRIVATE mirror you keep your real CV and runs there and they archive
+# normally. Do real runs in your mirror, never in this public checkout.

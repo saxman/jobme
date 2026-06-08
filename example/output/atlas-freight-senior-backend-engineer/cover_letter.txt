@@ -1,0 +1,10 @@
+Dear Hiring Team,
+
+I have spent the last decade quietly obsessed with making backend systems that people can trust. When a pager stays silent through peak routing volume, that is work I am proudest of. Atlas Freight needs engineers who own reliability at scale as a first-class feature rather than an afterthought.
+
+In my current role leading logistics software for Northstar Logistics, I redesigned the order-routing service to cut p99 latency from 1.2s down to 280ms and introduced observability standards adopted by six teams. Earlier at Brightwave Analytics, I built streaming ingestion pipelines in Go handling two billion events per day while reducing cloud spend twenty-five percent through right-sizing policies.
+
+I mentor generously—helping two of four engineers achieve promotions within eighteen months—and measure what ships on the platform. My background with Kafka and PostgreSQL aligns well with your requirements to track high-volume shipments. I would welcome the chance to talk about how my work can support Atlas Freight's systems.
+
+Warmly,
+Jane Q. Candidate

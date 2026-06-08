@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<!--
+  EXAMPLE FILE — replace this with your own styled HTML resume before running jobme.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Jane Q. Candidate — Resume</title>
+<style>
+  @page { size: Letter; margin: 0.5in; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    color: #1a1a1a;
+    font-size: 10.5pt;
+    line-height: 1.35;
+    margin: 0;
+    word-wrap: break-word; /* Helps with long text wrapping */
+    max-width: none;
+  }
+  
+  /* Force headers to stay at top or bottom of pages if necessary, 
+     though content flow usually handles it best for simple resumes. */
+  
+  header { border-bottom: 2px solid #2b5797; padding-bottom: 8px; margin-bottom: 14px; }
+  h1 { font-size: 22pt; margin: 0 0 2px; color: #2b5797; letter-spacing: 0.5px; break-after: avoid;}
+  
+  .contact { 
+    font-size: 9pt; color: #444; 
+    max-width: 68%; /* Allow space for content next to it if needed */
+    overflow-wrap: anywhere;
+  }
+
+  h2 {
+    font-size: 13.5pt; text-transform: uppercase; letter-spacing: 1px;
+    color: #4a90d7; border-bottom: 1px solid #ccc;
+    padding-top: 8px; margin-top: 8px; break-before: avoid-after;}
+
+  
+  .role { 
+    display: flex; justify-content: space-between; font-weight: bold; align-items: baseline; 
+    page-break-inside: auto; /* Allow breaking inside this block if necessary */
+    overflow-wrap: anywhere; /* Important for long job titles/dates wrapping correctly on print width */
+  }
+
+  
+  
+
+/* This class allows the "Role Name" to wrap nicely onto new lines. 
+   The original exemplar style was simple, but strict text replacement often breaks layout. 
+   Adding max-width here ensures it doesn't run off screen/page at end of line.*/
+.role > span:last-child { font-weight: normal; color: #555; font-style: italic; }
+
+  .org { color: #2b5797; margin-right: 4px; break-after: avoid;} 
+  
+/* Allow job titles to wrap if they are long, but keep organization bold on first line */
+.role > span:nth-child(1) { display:block; white-space:normal; }
+
+ul { 
+    /* Indentation logic must work with flexbox parent. Original used padding-left */  
+    margin: 4px 0 6px 28px; position:relative; left:-5%;
+} 
+
+li { 
+margin-bottom: 3px; font-size: 10pt;}
+
+/* Handle bold keywords inside bullets, ensuring they don't break the layout weirdly. */
+strong { color:#000 !important; }
+
+
+.skills span { display: inline-block; margin-right: 4px; white-space:normal;}
+ 
+section { max-width: none; padding-bottom:6px; page-break-after: auto; }
+
+/* Ensure headers don't split weirdly. */
+h2, h1 { break-before: avoid-page; break-inside: avoid; text-align:center;}
+
+
+</style>
+<link rel="canonical" href="#" />
+<style id="__next"> 
+  </style>
+</head>
+<body style='font-family:"Georgia","Times New Roman",serif;color:#2b5797;font-size:10.8pt;line-height:1.4;margin-top:36px;'>
+<div class="container" style="margin:auto;max-width:816px;padding-bottom: 5in;">
+
+<header>
+    <h1>Jane Q. Candidate</h1>
+    <div class="contact">
+      example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate  
+    </div>
+  </header>
+
+  <section style='margin-bottom:18px;'>
+        <h2>Summary</h2>
+    
+      Senior software engineer with 9+ years building reliable backend systems and developer tooling for high-throughput distributed services. Strength in API design, observability standards, and engineering mentoring. Comfortable owning features end to end from design through on-call rotation. Proven track record of measurable performance improvements including reducing p99 latency and cloud spend while scaling ingestion pipelines to 2B+ events/day.
+      
+    
+    </section>
+
+<section style='margin-bottom:18px;'>
+        <h2>Skills</h2>
+    <p class="skills"><strong>Languages:</strong> Python, Go, TypeScript, SQL · 
+       <strong>Infrastructure:</strong> AWS, GCP, Docker, Kubernetes, Terraform · 
+       <strong>Data & Messaging:</strong> PostgreSQL, Redis, Kafka, BigQuery  ·<br/>
+         <strong style="display:inline-block">Practices</strong>:</span><em style="color:#1a1a1a;font-weight: normal; display:block;">CI/CD, observability, code review, technical writing, mentoring.</em></p>
+
+    
+    </section>
+
+<section style='margin-bottom:36px;'>
+  <h2>Experience</h2>
+
+  
+   <!-- Job 1 -->
+<div class="role">
+      <span><div class="org" style="display:inline;">Northstar Logistics</div>&mdash;&nbsp;Staff Software Engineer<span></span></span>
+      <span>JAN 2021 &ndash; PRESENT</span>
+    </div>
+
+<ul>
+    <li>Led redesign of order-routing service and cutting p99 latency from 1.2s to 280ms for customer-facing APIs.</li>
+    
+    <li style="margin-bottom:3px;">Introduced a service-level observability standard adopted by 6 teams; owned on-call rotation tooling which reduced pages per week by 40%.</li> 
+    
+    <li>Mentored 4 engineers within the team, leading to 2 promotions to senior roles within 18 months.</li>
+</ul><br/><br/>
+
+  
+   <!-- Job 2 -->
+<div class="role">
+      <span><div class="org" style="display:inline;">Brightwave Analytics</div>&mdash;&nbsp;Senior Software Engineer<span></span></span>
+      <span>JUN 2017 &ndash; DEC 2020</span>
+    </div>
+
+<ul>
+    
+    <li>Built streaming ingestion pipeline using Kafka and Go handling 2B events/day in production environments.</li>
+ 
+   <li style="margin-bottom:3px;">Cut cloud spend by 25% through right-sizing resources and introducing autoscaling policies on GCP/AWS infrastructure.</li> 
+  
+    <li>Designed public REST + webhook API utilized by over 300+ customers for data integration needs.</li>
+</ul><br/><br/>
+
+
+  
+   <!-- Job 3 -->
+<div class="role">
+      <span><div class="org" style="display:inline;">Civic Data Foundation</div>&mdash;&nbsp;Software Engineer<span></span></span>
+      <span>AUG 2015 &ndash; MAY 2017</span>
+    </div>
+
+<ul>
+  
+    <li>Developed open-data portals using Django serving 1M+ monthly visitors across various platforms.</li><br/>
+
+    <li style="margin-bottom:3px;">Partnered with non-technical stakeholders to deliver grant-reporting tools for data transparency initiatives.</li> 
+</ul><br/><br/></section>
+    
+<section style='margin-bottom:18px;'>
+        <h2>Projects & Recognition</h2>
+
+  
+    <!-- This list needs careful spacing. I am using simple paragraph text or li tags that handle new lines well -->
+<ul> 
+    
+      Maintainer of an open-source CLI for log triage (3k+ GitHub stars).<br/>Internal "Engineering Excellence" award, Northstar Logistics, 2022.<br/>Conference Talk: "Observability for Small Teams," RegionalPyCon 2023.  
+    
+      
+    
+    </ul>
+</section>
+
+<section style='margin-bottom:18px;'>
+        <h2>Education</h2> 
+   
+  
+      B.S., Computer Science — State University (2015). GPA: 3.8, Dean’s List Recipient<br/><br/>
+    
+    </section></div><!-- /container -->
+
+</body>
+</html>

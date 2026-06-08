@@ -53,16 +53,18 @@ this is a "private mirror," not the Fork button.)
    uv run playwright install chromium   # one-time, for the default PDF backend
    ```
 
-4. Add your materials in a `me/` folder and save them to your private repo:
+4. Add your materials to the `input/` folder and save them to your private repo:
 
    ```
-   mkdir me     # add cv.md, resume.html, and optional cover_letter1.txt, ...
-   git add me
+   mkdir input   # add cv.md, resume.html, and optional cover_letter-1.txt, cover_letter-2.txt, ...
+   git add input
    git commit -m "Add my CV and resume"
    git push origin main
    ```
 
-   See [Your inputs](#your-inputs) for what goes in `me/`.
+   `input/` and `output/` are the tool's default directories, so runs need no path flags.
+   They're committed only here in your private mirror. See [Your inputs](#your-inputs) for
+   what goes in `input/`.
 
 5. Set an API key for the default (cloud) model — or switch to a local model, see
    [Configuration](#configuration):
@@ -79,11 +81,10 @@ this is a "private mirror," not the Fork button.)
 Save a job posting to a text file, then run it (once per posting):
 
 ```
-uv run scripts/tailor.py --jd path/to/posting.txt --input-dir me --output-dir me/output
+uv run scripts/tailor.py --jd path/to/posting.txt
 ```
 
-Results are written to `me/output/<company-title>/`, which lives inside your tracked `me/`
-folder — so committing them archives every run:
+Results are written to `output/<company-title>/` — committing them archives every run:
 
 ```
 resume.html        resume.pdf         cover_letter.html   cover_letter.pdf
@@ -91,7 +92,7 @@ resume_content.md  cover_letter.txt   summary.md          trace.json
 ```
 
 ```
-git add me
+git add input output
 git commit -m "Tailored application for <company>"
 git push origin main
 ```
@@ -100,8 +101,8 @@ git push origin main
 
 ```
 --jd           Path to the job-description file. (required)
---input-dir    Inputs directory (your me/ folder).
---output-dir   Where results are written (me/output).
+--input-dir    Inputs directory (default: input).
+--output-dir   Where results are written (default: output).
 --model        AIMU model string; overrides JOBME_MODEL. Default anthropic:claude-sonnet-4-6.
 --pdf-backend  playwright (default) | weasyprint
 --name         Explicit "Company - Title" label for the output folder.
@@ -117,19 +118,22 @@ git push origin main
 
 ## Your inputs
 
-Put these in your `me/` folder:
+Put these in your `input/` folder:
 
 | File | Role | Required |
 |------|------|----------|
 | `cv.md` | **Content** source of truth — your full CV in markdown | yes |
 | `resume.html` | **Style/format** template — your existing styled resume | yes |
-| `cover_letter1.txt`, `cover_letter2.txt`, … | Writing-style samples (your voice) | optional |
+| `cover_letter-1.txt`, `cover_letter-2.txt`, … | Writing-style samples (your voice) | optional |
 
 jobme only uses facts present in `cv.md` — it never invents experience — and the two-page
 resume it generates reuses the look of your `resume.html`.
 
-> The public project ships example `input/cv.md` and `input/resume.html` you can open to see
-> the expected format (and to try jobme before adding your own — see below).
+> The committed [`example/`](example/) folder holds **demo files** (`cv.md`, `resume.html`,
+> `cover_letter-1.txt`, `jd_sample.txt`) plus a sample run in [`example/output/`](example/output/)
+> — open them to see the expected format and output, but **don't put your real data there**.
+> Your real CV and runs live in `input/` and `output/` in your **private mirror**, never in
+> this public checkout.
 
 ## Keeping your copy in sync
 
@@ -143,19 +147,22 @@ git push origin main
 ```
 
 > Always push with an explicit **`git push origin main`**, and only ever fetch from
-> **`upstream`** — that keeps your private materials out of the public project. Because your
-> data lives in `me/` (which the public project doesn't have), merges rarely conflict.
+> **`upstream`** — that keeps your private materials out of the public project. Because this
+> public project commits nothing to `input/`/`output/`, your data there won't conflict on sync.
 
-## Try it without a private repo (optional)
+## Example output
 
-To kick the tires in a plain clone of this project, jobme ships example inputs. Run against
-them with the defaults:
+The committed [`example/`](example/) folder is a complete, self-contained demo: the synthetic
+inputs (Jane Q. Candidate / Atlas Freight) plus a sample run under
+[`example/output/`](example/output/) so you can see what jobme produces — the tailored
+resume and cover letter (HTML + PDF), the approved text, and the run `summary.md`/`trace.json`.
+
+To regenerate it yourself in a plain clone of this project:
 
 ```
 uv sync && uv run playwright install chromium
-uv run scripts/tailor.py --jd path/to/posting.txt
+uv run scripts/tailor.py --jd example/jd_sample.txt --input-dir example --output-dir example/output
 ```
 
-This reads the example `input/cv.md` / `input/resume.html` and writes results to `output/`
-(git-ignored). For real use, set up a private copy as in [Getting started](#getting-started)
-and keep your materials in `me/`.
+For real use, set up a private copy as in [Getting started](#getting-started) and keep your
+materials in `input/` (runs go to `output/`); both are committed in your private mirror.
