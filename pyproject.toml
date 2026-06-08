@@ -5,7 +5,7 @@ description = "Generative AI for effective job hunting: agentically tailor a res
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "aimu[anthropic,ollama]",
+    "aimu[anthropic,ollama]>=0.7.0",
     "playwright",
     "weasyprint",
     "pypdf",
@@ -22,7 +22,3 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["jobme*"]
-
-# Use the AIMU checkout in the sibling directory as an editable dependency.
-[tool.uv.sources]
-aimu = { path = "../aimu", editable = true }

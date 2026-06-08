@@ -207,8 +207,9 @@ marimo/_lsp/
 __marimo__/
 
 # project-specific ignores
-# Generated, per-job results are never committed.
-output/
+# Generated, per-job results are never committed (anchored to the repo root so a
+# private mirror can still track its own me/output/ runs if it wants to).
+/output/
 # Everything the user drops into input/ stays private (real CV, cover letters,
 # job descriptions) -- except the two committed starter examples below.
 input/*
