@@ -92,45 +92,80 @@ Run it once per new job posting.
 To run jobme on your real CV without committing it here, create a **private mirror** repo
 that tracks this project. (GitHub won't make a *private* fork of a public repo, and you
 can't fork a repo into the account that already owns it — so use a mirror, not the Fork
-button.) Your real files stay in a separate `me/` folder on a branch, so the committed
-samples in `input/` are never overwritten and upstream updates merge cleanly.
+button.) You keep your real files in a `me/` folder and work on a single `main` branch;
+the committed samples in `input/` are left untouched.
+
+**The model:** two remotes, one branch.
+
+- `upstream` → this public project (you only ever *fetch* from it, for code updates).
+- `origin` → your private repo (you only ever *push* to it).
+- `main` → your private repo's code **plus** your `me/` data folder. This is where you work.
+
+> ⚠️ **Safety rule:** always push with an explicit `git push origin main`, and only ever
+> fetch from `upstream`. The commands below are explicit on purpose — a bare `git push`
+> can target whichever remote `main` happens to track, which after cloning is `upstream`
+> (the *public* project). Being explicit guarantees your private data only goes to `origin`.
+
+The commands assume you `cd` into your mirror directory once; then every `git` command is
+plain (no `-C <path>` needed).
+
+### Workflow 1 — Getting set up (one time)
 
 1. Create an empty **private** repo on GitHub, e.g. `you/jobme-private`.
 2. Clone this project **as a sibling of `aimu`** (so the `../aimu` path dependency in
-   `pyproject.toml` still resolves) and wire two remotes:
+   `pyproject.toml` resolves) and wire the two remotes:
 
    ```
    git clone https://github.com/saxman/jobme.git jobme-private
    cd jobme-private
-   git remote rename origin upstream                        # updates come FROM here
+   git remote rename origin upstream                        # code updates come FROM here
    git remote add origin https://github.com/you/jobme-private.git
-   git push -u origin main                                  # main = a clean mirror
+   git push -u origin main                                  # publish main to YOUR repo + track it
    ```
 
-3. Keep your data on its own branch:
+   The `-u origin main` is important: it makes your local `main` track *your private repo*,
+   not the public project. Confirm with `git status -sb` — the first line should read
+   `## main...origin/main`.
+
+3. Add your data and install dependencies:
 
    ```
-   git switch -c personal
-   mkdir me     # add your real cv.md, resume.html, cover_letter*.txt here
-   git add me && git commit -m "My CV and resume" && git push -u origin personal
+   mkdir me     # put your real cv.md, resume.html, cover_letter*.txt here
+   git add me
+   git commit -m "Add my CV and resume"
+   git push origin main
+
+   uv sync
+   uv run playwright install chromium
    ```
 
-4. Run against your data (the `input/` samples stay untouched):
+### Workflow 2 — Making changes (run it / update your data)
 
-   ```
-   uv run scripts/tailor.py --jd path/to/posting.txt --input-dir me
-   ```
+Edit files in `me/`, then run against them — the `input/` samples stay untouched:
 
-5. Pull in updates later — refresh the mirror, then merge into your branch:
+```
+uv run scripts/tailor.py --jd path/to/posting.txt --input-dir me
+```
 
-   ```
-   git fetch upstream
-   git switch main && git merge --ff-only upstream/main && git push
-   git switch personal && git merge main && uv sync && git push
-   ```
+### Workflow 3 — Pushing your changes to your private repo
 
-   You can also refresh `main` entirely on GitHub (no clone needed) with:
-   `gh repo sync you/jobme-private --source saxman/jobme --branch main`.
+```
+git add me              # (and any other personal tweaks)
+git commit -m "Update my materials"
+git push origin main    # explicit origin → your private repo
+```
 
-Only ever **push to `origin`** and **fetch from `upstream`** — that guarantees your private
-data never reaches the public project.
+### Workflow 4 — Syncing code updates from the public project
+
+Fetch the latest project code and merge it into your `main`:
+
+```
+git fetch upstream
+git merge upstream/main   # a normal merge; resolve conflicts if any
+uv sync                   # if dependencies changed
+git push origin main      # save the merged result to your private repo
+```
+
+If you hit a conflict in `.gitignore` or other files you've customized, resolve it in your
+editor, `git add` the file, and `git commit`. Because your data lives in `me/` (which the
+public project doesn't have), conflicts are usually limited to files you've changed yourself.
