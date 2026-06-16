@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Thin entrypoint: `uv run scripts/tailor.py --jd <path> [...]`.
+"""Thin entrypoint: `uv run scripts/jobme.py --jd <path> [...]`.
 
 Delegates to jobme.cli.main so the same logic backs the `jobme` console script.
 """

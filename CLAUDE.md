@@ -15,7 +15,7 @@ uv sync                              # install deps (incl. aimu from PyPI)
 uv run playwright install chromium   # one-time, for the default PDF backend
 
 # Run the pipeline (the package's only real entry point; defaults to input/ and output/):
-uv run scripts/tailor.py --jd path/to/posting.txt [--input-dir DIR --output-dir DIR]
+uv run scripts/jobme.py --jd path/to/posting.txt [--input-dir DIR --output-dir DIR]
 ```
 
 There is **no automated test suite**. Verify changes by running the pipeline end-to-end.
@@ -25,7 +25,7 @@ To avoid API cost/keys during development, run against a local model:
 
 ## Architecture
 
-CLI ([scripts/tailor.py](scripts/tailor.py) → [jobme/cli.py](jobme/cli.py)) builds a
+CLI ([scripts/jobme.py](scripts/jobme.py) → [jobme/cli.py](jobme/cli.py)) builds a
 `Config` and calls [`jobme.pipeline.run`](jobme/pipeline.py). The package:
 
 - [jobme/pipeline.py](jobme/pipeline.py) — orchestration. Steps: derive job slug → tailor

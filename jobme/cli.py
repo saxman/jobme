@@ -1,6 +1,6 @@
 """Command-line interface for jobme.
 
-    uv run scripts/tailor.py --jd path/to/jd.txt \
+    uv run scripts/jobme.py --jd path/to/jd.txt \
         [--model anthropic:claude-sonnet-4-6] [--pdf-backend playwright|weasyprint] \
         [--name "Company - Title"] [--input-dir input] [--output-dir output]
 """

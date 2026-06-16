@@ -81,7 +81,7 @@ this is a "private mirror," not the Fork button.)
 Save a job posting to a text file, then run it (once per posting):
 
 ```
-uv run scripts/tailor.py --jd path/to/posting.txt
+uv run scripts/jobme.py --jd path/to/posting.txt
 ```
 
 Results are written to `output/<company-title>/` — committing them archives every run:
@@ -161,7 +161,7 @@ To regenerate it yourself in a plain clone of this project:
 
 ```
 uv sync && uv run playwright install chromium
-uv run scripts/tailor.py --jd example/jd_sample.txt --input-dir example --output-dir example/output
+uv run scripts/jobme.py --jd example/jd_sample.txt --input-dir example --output-dir example/output
 ```
 
 For real use, set up a private copy as in [Getting started](#getting-started) and keep your
