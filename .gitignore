@@ -211,3 +211,4 @@ __marimo__/
 # (inputs) and example/output/ (a sample run). input/ and output/ are intentionally NOT
 # ignored -- in a PRIVATE mirror you keep your real CV and runs there and they archive
 # normally. Do real runs in your mirror, never in this public checkout.
+.DS_Store
