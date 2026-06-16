@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 
@@ -56,7 +57,8 @@ def slugify(value: str) -> str:
 
 
 def make_output_dir(output_dir: Path, slug: str) -> Path:
-    """Create and return ``output_dir/slug`` (parents included)."""
-    target = output_dir / slug
+    """Create and return a timestamp-prefixed run dir, e.g. ``output_dir/20260616-143052_slug``."""
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    target = output_dir / f"{stamp}_{slug}"
     target.mkdir(parents=True, exist_ok=True)
     return target
