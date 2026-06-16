@@ -21,7 +21,7 @@ from .config import (
     TARGET_RESUME_PAGES,
 )
 from .io_utils import Inputs, load_inputs, make_output_dir, slugify
-from .pdf import html_to_pdf, page_count
+from .pdf import check_backend, html_to_pdf, page_count
 
 
 # --- Steps ---------------------------------------------------------------------
@@ -169,6 +169,7 @@ def _write_summary(
 def run(config: Config) -> dict:
     """Run the full pipeline for one job posting; returns paths to produced files."""
     inputs = load_inputs(config.input_dir, config.jd_path)
+    check_backend(config.pdf_backend)  # fail fast before any LLM calls
     slug = _job_slug(config.model, inputs.job_description, config.name)
     out_dir = make_output_dir(config.output_dir, slug)
 
