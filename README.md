@@ -126,6 +126,7 @@ Put these in your `input/` folder:
 | `cv.md` | **Content** source of truth — your full CV in markdown | yes |
 | `resume.html` | **Style/format** template — a complete styled resume | yes |
 | `cover_letter-1.txt`, `cover_letter-2.txt`, … | Writing-style samples (your voice) | optional |
+| `guidance.md` | Free-form writing/formatting guidance for the model | optional |
 
 **`cv.md` — your complete CV (the content).** jobme tailors each resume by *selecting and
 rephrasing* from this file and **never invents anything that isn't in it**, so make it
@@ -148,6 +149,12 @@ fonts, layout, and section structure, swapping in the tailored content. It shoul
 
 **Cover-letter samples (optional).** One or more `.txt` files of letters you've written; jobme
 matches their tone and phrasing. Omit them and it writes in a neutral professional voice.
+
+**`guidance.md` (optional) — writing/formatting rules for the model.** Free-form instructions
+applied to every generation step (resume content, cover letter, and rendering) — for example
+"Don't use em dashes; use commas or parentheses", "Use British spelling", or "Keep bullets to
+one line". Accuracy always wins: guidance can shape wording and format but never licenses
+inventing anything that isn't in your `cv.md`.
 
 > The committed [`example/`](example/) folder holds **demo files** (`cv.md`, `resume.html`,
 > `cover_letter-1.txt`, `jd_sample.txt`) plus a sample run in [`example/output/`](example/output/)

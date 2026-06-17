@@ -16,6 +16,7 @@ class Inputs:
     resume_html: str
     job_description: str
     cover_letter_samples: list[str] = field(default_factory=list)
+    guidance: str = ""  # optional free-form generation guidance (input/guidance.md)
 
 
 def _read(path: Path, label: str) -> str:
@@ -40,11 +41,16 @@ def load_inputs(input_dir: Path, jd_path: Path) -> Inputs:
         if text:
             samples.append(text)
 
+    # Optional free-form guidance applied to every generation step (e.g. "no em dashes").
+    guidance_path = input_dir / "guidance.md"
+    guidance = guidance_path.read_text(encoding="utf-8").strip() if guidance_path.exists() else ""
+
     return Inputs(
         cv_markdown=cv,
         resume_html=resume,
         job_description=jd,
         cover_letter_samples=samples,
+        guidance=guidance,
     )
 
 

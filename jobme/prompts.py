@@ -4,6 +4,16 @@ Kept in one module so the agent instructions are easy to read, tune, and audit.
 The two review steps (resume + cover letter) share the same accuracy/intrigue bar.
 """
 
+# Appended to every text-producing system prompt when the user supplies input/guidance.md.
+# It must not loosen the accuracy rule, so it is framed as subordinate to it.
+GUIDANCE_BLOCK = (
+    "\n\nADDITIONAL USER GUIDANCE: the user provided the following instructions for how to "
+    "write and format the output. Follow them in everything you produce, EXCEPT never let "
+    "them override the strict accuracy rule above (never invent facts to satisfy guidance).\n"
+    "{guidance}"
+)
+
+
 # --- Job slug extraction -------------------------------------------------------
 
 SLUG_SYSTEM = "You extract concise labels. Reply with only what is asked, no preamble."

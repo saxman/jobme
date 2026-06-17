@@ -69,8 +69,13 @@ CLI ([scripts/jobme.py](scripts/jobme.py) → [jobme/cli.py](jobme/cli.py)) buil
 - **Transient API errors** (network/rate-limit/5xx) are retried with backoff: each pipeline
   step in `run()` is wrapped in `_with_retry` (steps are self-contained and re-runnable).
 - **Inputs:** `cv.md` = content source of truth, `resume.html` = style/format template,
-  `cover_letter*.txt` = optional voice samples. The pipeline must never invent facts absent
-  from `cv.md` — keep that constraint in the prompts if you edit them.
+  `cover_letter*.txt` = optional voice samples, `guidance.md` = optional free-form generation
+  guidance. The pipeline must never invent facts absent from `cv.md` — keep that constraint in
+  the prompts if you edit them.
+- **Optional `guidance.md`** (loaded into `Inputs.guidance`) is appended via `_with_guidance`
+  to the system prompt of every text-producing step (resume/cover generators, content
+  expansion, both HTML renderers) using `prompts.GUIDANCE_BLOCK`, which subordinates it to the
+  accuracy rule. Not applied to evaluators or the slug step.
 - **The exemplar `resume.html` drives fill**, not just style. The renderer mimics its layout,
   so keep it a *complete, densely-filled two-page* resume (a sparse stub anchors the renderer
   toward sparse output). Its print CSS must let sections **flow across the page break** — use

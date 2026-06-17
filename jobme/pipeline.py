@@ -80,6 +80,13 @@ def _with_retry(label: str, fn: Callable[[], _T]) -> _T:
 # --- Steps ---------------------------------------------------------------------
 
 
+def _with_guidance(system: str, guidance: str) -> str:
+    """Append the user's optional generation guidance to a system prompt, if any."""
+    if not guidance:
+        return system
+    return system + prompts.GUIDANCE_BLOCK.format(guidance=guidance)
+
+
 def _job_slug(model: str, job_description: str, name: str | None) -> str:
     if name:
         return slugify(name)
@@ -94,7 +101,11 @@ def _job_slug(model: str, job_description: str, name: str | None) -> str:
 def _tailor_resume(model: str, inputs: Inputs) -> tuple[str, EvaluatorOptimizer]:
     """Tailor resume content to the JD, reviewed for accuracy and intrigue."""
     loop = EvaluatorOptimizer(
-        generator=aimu.agent(model, system=prompts.RESUME_GENERATOR_SYSTEM, name="resume-writer"),
+        generator=aimu.agent(
+            model,
+            system=_with_guidance(prompts.RESUME_GENERATOR_SYSTEM, inputs.guidance),
+            name="resume-writer",
+        ),
         evaluator=aimu.agent(model, system=prompts.RESUME_EVALUATOR_SYSTEM, name="resume-reviewer"),
         max_rounds=MAX_REVIEW_ROUNDS,
         pass_keyword="PASS",
@@ -123,7 +134,7 @@ def _render_resume(
     If even after a content expansion the best fill stays low, the CV likely lacks enough
     relevant material for two pages; we emit the best result and warn.
     """
-    client = aimu.client(model, system=prompts.RESUME_HTML_SYSTEM)
+    client = aimu.client(model, system=_with_guidance(prompts.RESUME_HTML_SYSTEM, inputs.guidance))
     content_path = out_dir / "resume_content.md"
     html_path = out_dir / "resume.html"
     pdf_path = out_dir / "resume.pdf"
@@ -164,7 +175,7 @@ def _render_resume(
                     content=content,
                 ),
                 model=model,
-                system=prompts.RESUME_GENERATOR_SYSTEM,
+                system=_with_guidance(prompts.RESUME_GENERATOR_SYSTEM, inputs.guidance),
             )
             html = render.render_resume_html(client, inputs.resume_html, content)
             content_expanded = True
@@ -210,7 +221,11 @@ def _tailor_cover(model: str, inputs: Inputs) -> tuple[str, EvaluatorOptimizer]:
         voice_clause = ""
 
     loop = EvaluatorOptimizer(
-        generator=aimu.agent(model, system=prompts.COVER_GENERATOR_SYSTEM, name="cover-writer"),
+        generator=aimu.agent(
+            model,
+            system=_with_guidance(prompts.COVER_GENERATOR_SYSTEM, inputs.guidance),
+            name="cover-writer",
+        ),
         evaluator=aimu.agent(model, system=prompts.COVER_EVALUATOR_SYSTEM, name="cover-reviewer"),
         max_rounds=MAX_REVIEW_ROUNDS,
         pass_keyword="PASS",
@@ -227,7 +242,7 @@ def _tailor_cover(model: str, inputs: Inputs) -> tuple[str, EvaluatorOptimizer]:
 def _render_cover(
     model: str, inputs: Inputs, content: str, out_dir: Path, pdf_backend: str
 ) -> tuple[Path, Path]:
-    client = aimu.client(model, system=prompts.COVER_HTML_SYSTEM)
+    client = aimu.client(model, system=_with_guidance(prompts.COVER_HTML_SYSTEM, inputs.guidance))
     html_path = out_dir / "cover_letter.html"
     pdf_path = out_dir / "cover_letter.pdf"
     html = render.render_cover_html(client, inputs.resume_html, content)
