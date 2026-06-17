@@ -1,8 +1,8 @@
 # jobme run summary: atlas-freight-senior-backend-engineer
 
-- **Model:** `ollama:qwen3.5:9b`
+- **Model:** `anthropic:claude-opus-4-8`
 - **PDF backend:** `playwright`
-- **Resume pages:** 2 (target 2 -- OK)
+- **Resume pages:** 2 (target 2 -- OK, filling ~1.41)
 
 ## Files produced
 - `resume.html`
@@ -20,74 +20,118 @@
 
 You tailor a candidate's resume content to a specific job description.
 STRICT ACCURACY RULE: use ONLY facts present in the provided CV. Never invent or embellish employers, titles, dates, degrees, metrics, or skills. You may reorder, select, emphasize, and rephrase real content to align with the job, but every claim must be traceable to the CV.
-Aim for content that comfortably fits a two-page resume. Output clean Markdown with clear section headings (e.g. Summary, Experience, Skills, Education). Output only the tailored resume content -- no commentary.
+TARGET LENGTH: produce enough strong, relevant content to fill about two pages -- substantive enough to fill two FULL pages, but not so much that it would overflow onto a third. Do not pad with filler to hit the length. Output clean Markdown with clear section headings (e.g. Summary, Experience, Skills, Education). Output only the tailored resume content -- no commentary.
 
 **user:**
 
-Revise your response based on this feedback:
-ACCURACY VIOLATIONS DETECTED: The candidate's response fabricates details not present in the Source CV truth file, violating the core instruction "it will never invent facts that are not present in this file." Specifically:
-
-1.  **Invented Award Reasoning (Selected Projects & Recognition):**
-    *   **Offending Text:** `Internal "Engineering Excellence" award, Northstar Logistics, 2022 (recognized for reliability improvements and code quality).`
-    *   **Fix:** Remove the parenthetical reason "(recognized for...)". The Source CV only states: `"Internal "Engineering Excellence" award, Northstar Logistics, 2022.` You must not invent reasons or justifications that were never awarded to you.
-
-2.  **Invented CLI Functionality (Selected Projects & Recognition):**
-    *   **Offending Text:** `Maintainer of an open-source CLI for log triage with 3k+ GitHub stars supporting high-volume event analysis.`
-    *   **Fix:** Strip the functionality claim "supporting high-volume event analysis." The Source CV text reads: `(3k+ GitHub stars)` (implied context only). You added technical scope not defined in your source file. Keep it to `Maintainer of an open-source CLI for log triage (3k+ GitHub stars)`.
-
-**Note:** While the Northstar bullet merging is common practice, ensure you do not drop specific metrics or combine distinct achievements unless explicitly stated that work happened concurrently if they are separate accomplishments in the source truth. However, the fabrication above takes priority.
-
-Original task: Tailor the following CV into resume content targeted at the job description.
+Tailor the following CV into resume content targeted at the job description.
 
 === CV (source of truth) ===
 # Jane Q. Candidate
 
 example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
 
-> **EXAMPLE FILE — replace this with your real, comprehensive CV before running jobme.**
-> This markdown CV is the *content* source of truth: include everything (full history,
+> **DEMO FILE — do NOT replace this with your real CV.** It's a sample so jobme runs out of
+> the box and shows the expected format. For real use, keep your own `cv.md` outside the
+> tracked examples — in a private mirror's `me/` folder (see README) or any `--input-dir` —
+> so your personal data is never committed.
+>
+> The markdown CV is the *content* source of truth: include everything (full history,
 > detail, metrics). The pipeline selects and rephrases from here to fit each job — it
 > will never invent facts that are not present in this file.
 
 ## Summary
 
-Senior software engineer with 9+ years building reliable backend systems and developer
-tooling. Strength in distributed systems, API design, and mentoring. Comfortable owning
-features end to end, from design through on-call.
+Senior software engineer with 9+ years building reliable, high-throughput backend systems
+and the developer tooling around them. Strength in distributed systems, API design, event
+streaming, and observability, with a track record of measurable latency, reliability, and
+cost improvements. Comfortable owning features end to end, from design docs through on-call,
+and known for mentoring engineers and raising code-quality standards across teams.
 
 ## Skills
 
-- **Languages:** Python, Go, TypeScript, SQL
-- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform
-- **Data:** PostgreSQL, Redis, Kafka, BigQuery
-- **Practices:** CI/CD, observability, code review, technical writing, mentoring
+- **Languages:** Python, Go, TypeScript, SQL, Bash
+- **Backend:** REST and webhook APIs, gRPC, event-driven architecture, idempotency and
+  exactly-once processing, schema design and migrations, caching strategies
+- **Distributed systems:** sharding and partitioning, leader election, backpressure, queue
+  and stream processing, eventual consistency, idempotent consumers
+- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform, GitHub Actions, ArgoCD
+- **Data & messaging:** PostgreSQL, Redis, Kafka, BigQuery, Elasticsearch
+- **Observability:** Prometheus, Grafana, OpenTelemetry, distributed tracing, SLOs and error
+  budgets, structured logging
+- **Practices:** CI/CD, incident response, code review, technical writing, mentoring,
+  design-review facilitation, threat modeling
 
 ## Experience
 
 ### Staff Software Engineer — Northstar Logistics (Jan 2021 – Present)
-- Led redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms.
-- Introduced a service-level observability standard adopted by 6 teams.
-- Mentored 4 engineers; 2 were promoted to senior within 18 months.
-- Owned on-call rotation tooling; reduced pages per week by 40%.
+
+- Led the redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms and
+  sustaining it under a 3x traffic increase over two years.
+- Re-architected the routing data model around event sourcing, eliminating a class of
+  double-assignment bugs that had caused three customer-facing incidents per quarter.
+- Introduced a service-level observability standard (structured logs, RED metrics, trace
+  propagation) adopted by 6 teams; it became the template for new-service onboarding.
+- Designed a Kafka-based event backbone for shipment state changes, decoupling six services
+  and enabling near-real-time tracking updates for customers.
+- Owned the on-call rotation tooling and runbook program; reduced pages per week by 40% and
+  cut mean time to acknowledge from 12 minutes to under 4.
+- Mentored 4 engineers through structured growth plans; 2 were promoted to senior within
+  18 months. Ran the weekly design-review forum for the platform group.
+- Drove a migration from a monolithic scheduler to a horizontally scalable worker pool on
+  Kubernetes, enabling the business to onboard two enterprise customers without re-architecting.
 
 ### Senior Software Engineer — Brightwave Analytics (Jun 2017 – Dec 2020)
-- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day.
-- Designed the public REST + webhook API used by 300+ customers.
-- Cut cloud spend 25% by right-sizing and introducing autoscaling policies.
+
+- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day with end-to-end
+  latency under 5 seconds at p99.
+- Designed and shipped the public REST + webhook API used by 300+ customers, including the
+  versioning, auth, and rate-limiting model still in use today.
+- Implemented idempotent, exactly-once consumers that survived broker failovers without
+  duplicate processing, replacing a fragile at-least-once design.
+- Cut cloud spend 25% by right-sizing instances, introducing autoscaling policies, and moving
+  cold analytics data to tiered storage.
+- Introduced contract testing between services, reducing integration regressions caught in
+  staging by roughly half.
+- Led the on-call response for the ingestion platform and authored the postmortem template
+  the engineering org standardized on.
 
 ### Software Engineer — Civic Data Foundation (Aug 2015 – May 2017)
-- Developed open-data portals (Django) serving 1M+ monthly visitors.
-- Partnered with non-technical stakeholders to ship grant-reporting tools.
+
+- Developed open-data portals (Django, PostgreSQL) serving 1M+ monthly visitors.
+- Built a grant-reporting toolset with non-technical stakeholders, replacing a manual
+  spreadsheet process and cutting reporting time from days to hours.
+- Added full-text search (Elasticsearch) and a Redis caching layer that brought common
+  queries from seconds to milliseconds.
+- Set up the team's first CI pipeline and automated deploys, ending manual release nights.
+
+### Software Engineering Intern — Helio Systems (Jun 2014 – Aug 2014)
+
+- Built an internal metrics dashboard (Python, PostgreSQL) still used by the platform team.
+- Automated a nightly data-reconciliation job, removing a recurring manual task.
 
 ## Education
 
 **B.S., Computer Science** — State University (2015). GPA 3.8. Dean's List.
+Relevant coursework: distributed systems, databases, operating systems, algorithms,
+networks.
+
+## Certifications
+
+- AWS Certified Solutions Architect – Associate (2022).
 
 ## Selected Projects & Recognition
 
-- Maintainer of an open-source CLI for log triage (3k+ GitHub stars).
-- Internal "Engineering Excellence" award, Northstar Logistics, 2022.
+- Maintainer of an open-source CLI for log triage (3k+ GitHub stars); used in several
+  companies' incident workflows.
+- Internal "Engineering Excellence" award, Northstar Logistics, 2022, for the routing-service
+  reliability work.
 - Conference talk: "Observability for Small Teams," RegionalPyCon 2023.
+- Conference talk: "Idempotency Patterns for Event-Driven Systems," GoWest 2022.
+- Author of an internal guide to writing idempotent consumers that was adopted as required
+  reading for new backend hires.
+- Open-source contributor to a popular Go Kafka client (several merged PRs improving
+  consumer-group rebalancing).
 
 === JOB DESCRIPTION ===
 Senior Backend Engineer — Atlas Freight (Remote, US)
@@ -111,41 +155,74 @@ Requirements:
 
 **assistant:**
 
-# Jane Q. Candidate  
-example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate  
+# Jane Q. Candidate
 
-## Summary  
-Senior software engineer with 9+ years building reliable backend systems and developer tooling for high-throughput distributed services. Strength in API design, observability standards, and engineering mentoring. Comfortable owning features end to end from design through on-call rotation. Proven track record of measurable performance improvements including reducing p99 latency and cloud spend while scaling ingestion pipelines to 2B+ events/day.
+example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
 
-## Skills  
-**Languages:** Python, Go, TypeScript, SQL  
-**Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform  
-**Data & Messaging:** PostgreSQL, Redis, Kafka, BigQuery  
-**Practices:** CI/CD, observability, code review, technical writing, mentoring  
+## Summary
 
-## Experience  
+Senior backend engineer with 9+ years building reliable, high-throughput distributed systems in production — including the order-routing and shipment-tracking platforms behind a logistics business. Deep experience designing and operating event-driven services (Kafka), improving customer-facing API latency and reliability, and setting observability standards that reduce on-call burden. Strong in Go and Python on AWS and GCP, with a consistent track record of measurable latency, reliability, and cost improvements. Known for owning services end to end — from design docs through on-call — mentoring engineers, and raising code-quality standards across teams. Excellent written communicator.
 
-### Staff Software Engineer — Northstar Logistics (Jan 2021 – Present)  
-- **Latency Optimization:** Led redesign of order-routing service and cutting p99 latency from 1.2s to 280ms for customer-facing APIs.  
-- **Observability & Reliability:** Introduced a service-level observability standard adopted by 6 teams; owned on-call rotation tooling which reduced pages per week by 40%.  
-- **Mentorship:** Mentored 4 engineers within the team, leading to 2 promotions to senior roles within 18 months.  
+## Skills
 
-### Senior Software Engineer — Brightwave Analytics (Jun 2017 – Dec 2020)  
-- **High Throughput Systems:** Built streaming ingestion pipeline using Kafka and Go handling 2B events/day in production environments.  
-- **Cloud Efficiency & Reliability:** Cut cloud spend by 25% through right-sizing resources and introducing autoscaling policies on GCP/AWS infrastructure.  
-- **API Design:** Designed public REST + webhook API utilized by over 300+ customers for data integration needs.  
+- **Languages:** Go, Python, TypeScript, SQL, Bash
+- **Backend & APIs:** REST and webhook APIs, gRPC, event-driven architecture, idempotency and exactly-once processing, API versioning, auth, rate limiting, schema design and migrations, caching strategies
+- **Distributed systems:** sharding and partitioning, leader election, backpressure, queue and stream processing, eventual consistency, idempotent consumers
+- **Event streaming & data:** Kafka, PostgreSQL, Redis, BigQuery, Elasticsearch
+- **Cloud & infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform, GitHub Actions, ArgoCD
+- **Observability:** Prometheus, Grafana, OpenTelemetry, distributed tracing, SLOs and error budgets, structured logging, RED metrics
+- **Practices:** CI/CD, incident response, on-call/runbook programs, code review, technical writing, mentoring, design-review facilitation
 
-### Software Engineer — Civic Data Foundation (Aug 2015 – May 2017)  
-- **Data Portals & Tools:** Developed open-data portals using Django serving 1M+ monthly visitors across various platforms.  
-- **Stakeholder Collaboration:** Partnered with non-technical stakeholders to deliver grant-reporting tools for data transparency initiatives.  
+## Experience
 
-## Education  
-**B.S., Computer Science — State University (2015).** GPA: 3.8, Dean’s List Recipient  
+### Staff Software Engineer — Northstar Logistics (Jan 2021 – Present)
 
-## Projects & Recognition  
-- Maintainer of an open-source CLI for log triage (3k+ GitHub stars).  
-- Internal "Engineering Excellence" award, Northstar Logistics, 2022.  
-- Conference Talk: "Observability for Small Teams," RegionalPyCon 2023.
+- Led the redesign of the **order-routing service**, cutting p99 latency from 1.2s to 280ms and sustaining it under a 3x traffic increase over two years.
+- Designed a **Kafka-based event backbone** for shipment state changes, decoupling six services and enabling near-real-time tracking updates for customers.
+- Re-architected the routing data model around event sourcing, eliminating a class of double-assignment bugs that had caused three customer-facing incidents per quarter.
+- Introduced a service-level **observability standard** (structured logs, RED metrics, trace propagation) adopted by 6 teams; it became the template for new-service onboarding.
+- Owned the **on-call rotation tooling and runbook program**; reduced pages per week by 40% and cut mean time to acknowledge from 12 minutes to under 4.
+- Drove a migration from a monolithic scheduler to a horizontally scalable worker pool on Kubernetes, enabling the business to onboard two enterprise customers without re-architecting.
+- Mentored 4 engineers through structured growth plans; 2 were promoted to senior within 18 months. Ran the weekly design-review forum for the platform group.
+
+### Senior Software Engineer — Brightwave Analytics (Jun 2017 – Dec 2020)
+
+- Built a **streaming ingestion pipeline (Kafka + Go)** handling 2B events/day with end-to-end latency under 5 seconds at p99.
+- Designed and shipped the public **REST + webhook API** used by 300+ customers, including the versioning, auth, and rate-limiting model still in use today.
+- Implemented **idempotent, exactly-once consumers** that survived broker failovers without duplicate processing, replacing a fragile at-least-once design.
+- Cut cloud spend 25% by right-sizing instances, introducing autoscaling policies, and moving cold analytics data to tiered storage.
+- Introduced contract testing between services, reducing integration regressions caught in staging by roughly half.
+- Led the **on-call response** for the ingestion platform and authored the postmortem template the engineering org standardized on.
+
+### Software Engineer — Civic Data Foundation (Aug 2015 – May 2017)
+
+- Developed open-data portals (Django, PostgreSQL) serving 1M+ monthly visitors.
+- Added full-text search (Elasticsearch) and a **Redis caching layer** that brought common queries from seconds to milliseconds.
+- Set up the team's first **CI pipeline and automated deploys**, ending manual release nights.
+- Built a grant-reporting toolset with non-technical stakeholders, cutting reporting time from days to hours.
+
+### Software Engineering Intern — Helio Systems (Jun 2014 – Aug 2014)
+
+- Built an internal metrics dashboard (Python, PostgreSQL) still used by the platform team.
+- Automated a nightly data-reconciliation job, removing a recurring manual task.
+
+## Education
+
+**B.S., Computer Science** — State University (2015). GPA 3.8. Dean's List.
+Relevant coursework: distributed systems, databases, operating systems, algorithms, networks.
+
+## Certifications
+
+- AWS Certified Solutions Architect – Associate (2022)
+
+## Selected Projects & Recognition
+
+- Internal **"Engineering Excellence" award**, Northstar Logistics, 2022, for the routing-service reliability work.
+- Maintainer of an open-source CLI for log triage (3k+ GitHub stars); used in several companies' incident workflows.
+- Open-source contributor to a popular **Go Kafka client** (several merged PRs improving consumer-group rebalancing).
+- Author of an internal guide to writing idempotent consumers, adopted as required reading for new backend hires.
+- Conference talk: "Idempotency Patterns for Event-Driven Systems," GoWest 2022.
+- Conference talk: "Observability for Small Teams," RegionalPyCon 2023.
 
 #### Agent: resume-reviewer
 
@@ -165,50 +242,107 @@ Task: Tailor the following CV into resume content targeted at the job descriptio
 
 example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
 
-> **EXAMPLE FILE — replace this with your real, comprehensive CV before running jobme.**
-> This markdown CV is the *content* source of truth: include everything (full history,
+> **DEMO FILE — do NOT replace this with your real CV.** It's a sample so jobme runs out of
+> the box and shows the expected format. For real use, keep your own `cv.md` outside the
+> tracked examples — in a private mirror's `me/` folder (see README) or any `--input-dir` —
+> so your personal data is never committed.
+>
+> The markdown CV is the *content* source of truth: include everything (full history,
 > detail, metrics). The pipeline selects and rephrases from here to fit each job — it
 > will never invent facts that are not present in this file.
 
 ## Summary
 
-Senior software engineer with 9+ years building reliable backend systems and developer
-tooling. Strength in distributed systems, API design, and mentoring. Comfortable owning
-features end to end, from design through on-call.
+Senior software engineer with 9+ years building reliable, high-throughput backend systems
+and the developer tooling around them. Strength in distributed systems, API design, event
+streaming, and observability, with a track record of measurable latency, reliability, and
+cost improvements. Comfortable owning features end to end, from design docs through on-call,
+and known for mentoring engineers and raising code-quality standards across teams.
 
 ## Skills
 
-- **Languages:** Python, Go, TypeScript, SQL
-- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform
-- **Data:** PostgreSQL, Redis, Kafka, BigQuery
-- **Practices:** CI/CD, observability, code review, technical writing, mentoring
+- **Languages:** Python, Go, TypeScript, SQL, Bash
+- **Backend:** REST and webhook APIs, gRPC, event-driven architecture, idempotency and
+  exactly-once processing, schema design and migrations, caching strategies
+- **Distributed systems:** sharding and partitioning, leader election, backpressure, queue
+  and stream processing, eventual consistency, idempotent consumers
+- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform, GitHub Actions, ArgoCD
+- **Data & messaging:** PostgreSQL, Redis, Kafka, BigQuery, Elasticsearch
+- **Observability:** Prometheus, Grafana, OpenTelemetry, distributed tracing, SLOs and error
+  budgets, structured logging
+- **Practices:** CI/CD, incident response, code review, technical writing, mentoring,
+  design-review facilitation, threat modeling
 
 ## Experience
 
 ### Staff Software Engineer — Northstar Logistics (Jan 2021 – Present)
-- Led redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms.
-- Introduced a service-level observability standard adopted by 6 teams.
-- Mentored 4 engineers; 2 were promoted to senior within 18 months.
-- Owned on-call rotation tooling; reduced pages per week by 40%.
+
+- Led the redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms and
+  sustaining it under a 3x traffic increase over two years.
+- Re-architected the routing data model around event sourcing, eliminating a class of
+  double-assignment bugs that had caused three customer-facing incidents per quarter.
+- Introduced a service-level observability standard (structured logs, RED metrics, trace
+  propagation) adopted by 6 teams; it became the template for new-service onboarding.
+- Designed a Kafka-based event backbone for shipment state changes, decoupling six services
+  and enabling near-real-time tracking updates for customers.
+- Owned the on-call rotation tooling and runbook program; reduced pages per week by 40% and
+  cut mean time to acknowledge from 12 minutes to under 4.
+- Mentored 4 engineers through structured growth plans; 2 were promoted to senior within
+  18 months. Ran the weekly design-review forum for the platform group.
+- Drove a migration from a monolithic scheduler to a horizontally scalable worker pool on
+  Kubernetes, enabling the business to onboard two enterprise customers without re-architecting.
 
 ### Senior Software Engineer — Brightwave Analytics (Jun 2017 – Dec 2020)
-- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day.
-- Designed the public REST + webhook API used by 300+ customers.
-- Cut cloud spend 25% by right-sizing and introducing autoscaling policies.
+
+- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day with end-to-end
+  latency under 5 seconds at p99.
+- Designed and shipped the public REST + webhook API used by 300+ customers, including the
+  versioning, auth, and rate-limiting model still in use today.
+- Implemented idempotent, exactly-once consumers that survived broker failovers without
+  duplicate processing, replacing a fragile at-least-once design.
+- Cut cloud spend 25% by right-sizing instances, introducing autoscaling policies, and moving
+  cold analytics data to tiered storage.
+- Introduced contract testing between services, reducing integration regressions caught in
+  staging by roughly half.
+- Led the on-call response for the ingestion platform and authored the postmortem template
+  the engineering org standardized on.
 
 ### Software Engineer — Civic Data Foundation (Aug 2015 – May 2017)
-- Developed open-data portals (Django) serving 1M+ monthly visitors.
-- Partnered with non-technical stakeholders to ship grant-reporting tools.
+
+- Developed open-data portals (Django, PostgreSQL) serving 1M+ monthly visitors.
+- Built a grant-reporting toolset with non-technical stakeholders, replacing a manual
+  spreadsheet process and cutting reporting time from days to hours.
+- Added full-text search (Elasticsearch) and a Redis caching layer that brought common
+  queries from seconds to milliseconds.
+- Set up the team's first CI pipeline and automated deploys, ending manual release nights.
+
+### Software Engineering Intern — Helio Systems (Jun 2014 – Aug 2014)
+
+- Built an internal metrics dashboard (Python, PostgreSQL) still used by the platform team.
+- Automated a nightly data-reconciliation job, removing a recurring manual task.
 
 ## Education
 
 **B.S., Computer Science** — State University (2015). GPA 3.8. Dean's List.
+Relevant coursework: distributed systems, databases, operating systems, algorithms,
+networks.
+
+## Certifications
+
+- AWS Certified Solutions Architect – Associate (2022).
 
 ## Selected Projects & Recognition
 
-- Maintainer of an open-source CLI for log triage (3k+ GitHub stars).
-- Internal "Engineering Excellence" award, Northstar Logistics, 2022.
+- Maintainer of an open-source CLI for log triage (3k+ GitHub stars); used in several
+  companies' incident workflows.
+- Internal "Engineering Excellence" award, Northstar Logistics, 2022, for the routing-service
+  reliability work.
 - Conference talk: "Observability for Small Teams," RegionalPyCon 2023.
+- Conference talk: "Idempotency Patterns for Event-Driven Systems," GoWest 2022.
+- Author of an internal guide to writing idempotent consumers that was adopted as required
+  reading for new backend hires.
+- Open-source contributor to a popular Go Kafka client (several merged PRs improving
+  consumer-group rebalancing).
 
 === JOB DESCRIPTION ===
 Senior Backend Engineer — Atlas Freight (Remote, US)
@@ -233,62 +367,76 @@ Requirements:
 Response:
 # Jane Q. Candidate
 
-example@example.com · **(555) 123-4567** · San Francisco, CA · linkedin.com/in/janeqcandidate
+example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
 
 ## Summary
 
-Senior software engineer with 9+ years building reliable backend systems and developer tooling. Strength in distributed systems, API design, and mentoring. Comfortable owning features end to end, from design through on-call. Proven track record of measurable performance improvements and reliability standards across AWS/GCP environments.
+Senior backend engineer with 9+ years building reliable, high-throughput distributed systems in production — including the order-routing and shipment-tracking platforms behind a logistics business. Deep experience designing and operating event-driven services (Kafka), improving customer-facing API latency and reliability, and setting observability standards that reduce on-call burden. Strong in Go and Python on AWS and GCP, with a consistent track record of measurable latency, reliability, and cost improvements. Known for owning services end to end — from design docs through on-call — mentoring engineers, and raising code-quality standards across teams. Excellent written communicator.
 
 ## Skills
 
-- **Languages:** Python, Go, TypeScript, SQL
-- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform
-- **Data & Streaming:** PostgreSQL, Redis, Kafka, BigQuery
-- **Practices:** CI/CD, observability, code review, technical writing, mentoring
+- **Languages:** Go, Python, TypeScript, SQL, Bash
+- **Backend & APIs:** REST and webhook APIs, gRPC, event-driven architecture, idempotency and exactly-once processing, API versioning, auth, rate limiting, schema design and migrations, caching strategies
+- **Distributed systems:** sharding and partitioning, leader election, backpressure, queue and stream processing, eventual consistency, idempotent consumers
+- **Event streaming & data:** Kafka, PostgreSQL, Redis, BigQuery, Elasticsearch
+- **Cloud & infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform, GitHub Actions, ArgoCD
+- **Observability:** Prometheus, Grafana, OpenTelemetry, distributed tracing, SLOs and error budgets, structured logging, RED metrics
+- **Practices:** CI/CD, incident response, on-call/runbook programs, code review, technical writing, mentoring, design-review facilitation
 
 ## Experience
 
 ### Staff Software Engineer — Northstar Logistics (Jan 2021 – Present)
 
-*   Led redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms.
-*   Introduced a service-level observability standard adopted by 6 teams; reduced on-call burden across engineering groups.
-*   Mentored 4 engineers; 2 were promoted to senior within 18 months.
-*   Owned on-call rotation tooling development, reducing pages per week by 40%.
+- Led the redesign of the **order-routing service**, cutting p99 latency from 1.2s to 280ms and sustaining it under a 3x traffic increase over two years.
+- Designed a **Kafka-based event backbone** for shipment state changes, decoupling six services and enabling near-real-time tracking updates for customers.
+- Re-architected the routing data model around event sourcing, eliminating a class of double-assignment bugs that had caused three customer-facing incidents per quarter.
+- Introduced a service-level **observability standard** (structured logs, RED metrics, trace propagation) adopted by 6 teams; it became the template for new-service onboarding.
+- Owned the **on-call rotation tooling and runbook program**; reduced pages per week by 40% and cut mean time to acknowledge from 12 minutes to under 4.
+- Drove a migration from a monolithic scheduler to a horizontally scalable worker pool on Kubernetes, enabling the business to onboard two enterprise customers without re-architecting.
+- Mentored 4 engineers through structured growth plans; 2 were promoted to senior within 18 months. Ran the weekly design-review forum for the platform group.
 
 ### Senior Software Engineer — Brightwave Analytics (Jun 2017 – Dec 2020)
 
-*   Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day.
-*   Designed the public REST and webhook API used by over 300 customers; focused on reliability for customer-facing endpoints.
-*   Cut cloud spend 25% by right-sizing resources and introducing autoscaling policies to optimize high-throughput services.
+- Built a **streaming ingestion pipeline (Kafka + Go)** handling 2B events/day with end-to-end latency under 5 seconds at p99.
+- Designed and shipped the public **REST + webhook API** used by 300+ customers, including the versioning, auth, and rate-limiting model still in use today.
+- Implemented **idempotent, exactly-once consumers** that survived broker failovers without duplicate processing, replacing a fragile at-least-once design.
+- Cut cloud spend 25% by right-sizing instances, introducing autoscaling policies, and moving cold analytics data to tiered storage.
+- Introduced contract testing between services, reducing integration regressions caught in staging by roughly half.
+- Led the **on-call response** for the ingestion platform and authored the postmortem template the engineering org standardized on.
 
 ### Software Engineer — Civic Data Foundation (Aug 2015 – May 2017)
 
-*   Developed open-data portals using Django, serving over 1M monthly visitors.
-*   Partnered with non-technical stakeholders to ship grant-reporting tools ensuring system reliability under production load.
+- Developed open-data portals (Django, PostgreSQL) serving 1M+ monthly visitors.
+- Added full-text search (Elasticsearch) and a **Redis caching layer** that brought common queries from seconds to milliseconds.
+- Set up the team's first **CI pipeline and automated deploys**, ending manual release nights.
+- Built a grant-reporting toolset with non-technical stakeholders, cutting reporting time from days to hours.
+
+### Software Engineering Intern — Helio Systems (Jun 2014 – Aug 2014)
+
+- Built an internal metrics dashboard (Python, PostgreSQL) still used by the platform team.
+- Automated a nightly data-reconciliation job, removing a recurring manual task.
 
 ## Education
 
-**B.S., Computer Science** — State University (2015). GPA 3.8; Dean's List recipient.
+**B.S., Computer Science** — State University (2015). GPA 3.8. Dean's List.
+Relevant coursework: distributed systems, databases, operating systems, algorithms, networks.
+
+## Certifications
+
+- AWS Certified Solutions Architect – Associate (2022)
 
 ## Selected Projects & Recognition
 
-*   Maintainer of an open-source CLI for log triage with 3k+ GitHub stars supporting high-volume event analysis.
-*   Internal "Engineering Excellence" award, Northstar Logistics, 2022 (recognized for reliability improvements and code quality).
-*   Conference talk: "Observability for Small Teams," RegionalPyCon 2023; delivered technical writing on distributed systems practices.
+- Internal **"Engineering Excellence" award**, Northstar Logistics, 2022, for the routing-service reliability work.
+- Maintainer of an open-source CLI for log triage (3k+ GitHub stars); used in several companies' incident workflows.
+- Open-source contributor to a popular **Go Kafka client** (several merged PRs improving consumer-group rebalancing).
+- Author of an internal guide to writing idempotent consumers, adopted as required reading for new backend hires.
+- Conference talk: "Idempotency Patterns for Event-Driven Systems," GoWest 2022.
+- Conference talk: "Observability for Small Teams," RegionalPyCon 2023.
 
 **assistant:**
 
-ACCURACY VIOLATIONS DETECTED: The candidate's response fabricates details not present in the Source CV truth file, violating the core instruction "it will never invent facts that are not present in this file." Specifically:
-
-1.  **Invented Award Reasoning (Selected Projects & Recognition):**
-    *   **Offending Text:** `Internal "Engineering Excellence" award, Northstar Logistics, 2022 (recognized for reliability improvements and code quality).`
-    *   **Fix:** Remove the parenthetical reason "(recognized for...)". The Source CV only states: `"Internal "Engineering Excellence" award, Northstar Logistics, 2022.` You must not invent reasons or justifications that were never awarded to you.
-
-2.  **Invented CLI Functionality (Selected Projects & Recognition):**
-    *   **Offending Text:** `Maintainer of an open-source CLI for log triage with 3k+ GitHub stars supporting high-volume event analysis.`
-    *   **Fix:** Strip the functionality claim "supporting high-volume event analysis." The Source CV text reads: `(3k+ GitHub stars)` (implied context only). You added technical scope not defined in your source file. Keep it to `Maintainer of an open-source CLI for log triage (3k+ GitHub stars)`.
-
-**Note:** While the Northstar bullet merging is common practice, ensure you do not drop specific metrics or combine distinct achievements unless explicitly stated that work happened concurrently if they are separate accomplishments in the source truth. However, the fabrication above takes priority.
+PASS
 
 ## Agent reasoning trace -- Cover letter
 
@@ -303,77 +451,114 @@ Write a focused one-page letter (greeting, body, closing). Output only the lette
 
 **user:**
 
-Revise your response based on this feedback:
-Feedback on the cover letter response below.
-
-**1. ACCURACY -- Metric and Fact Check:**
-*   **Accuracy Issue (Mentoring Claim):** You mentioned "like the four engineers under my guidance experienced" in the context of promotions within 18 months. The CV explicitly states: *"Mentored 4 engineers; **2 were promoted to senior** within 18 months."* Your response phrasing implies all four had this specific experience/success outcome, which contradicts the "90+ years building reliable..." (Wait, checking again).
-    *   CV Fact: MEntored 4. Outcome for 2 was promotion in that timeframe. Response phrasing suggests a generalized successful mentoring program or implies the group collectively experienced promotions without quantifying success rates accurately based on facts. If you claim they "experienced" it as if all were promoted, this is an exaggeration of outcome data from your CV (which specifies half). To remain accurate to the source text: Specify that 2 succeeded in promotion within the timeframe or phrase it generally ("helped engineers grow toward promotions").
-*   **Accuracy Issue (Events):** "routing services handle millions of events" vs Current role? You mention this as a current state condition in Para 1. While you handled 2B/day at Brightwave, your Northstar claim focuses on latency cut for an order-routing service where volume isn't explicitly defined by CV numbers like the JD's requirement (millions). Since Job Description asks to track millions of shipments, it is likely safe context, but ensure clarity this applies generally or specifically via current role.
-
-**2. VOICE -- Style and Tone:**
-*   **Voice Mismatch:** The sample letter provided in the task description (`=== SAMPLE COVER LETTERS ===`) uses a very specific style: short paragraphs with clear topic sentences and distinct logical breaks (Hook -> Specific Metric Win -> Closing). Your response merges your current role metrics (Northstar) and previous experience (Brightwave/Kafka/Go) into one single dense paragraph block using run-on syntax ("In my current role leading... Previously built streaming pipelines").
-    *   **Revision Tip:** Match the Sample's cleaner structure by separating the Brightwave achievement from Northstar. Use a transition like "Earlier at..." instead of starting with an ellipsed fragment to match the clarity shown in the sample letter (which uses separate distinct sentences for different achievements). The response also feels more cluttered than the concise, punchy tone ("I write clearly...") displayed by Jane's sample style.
-
-**3. INTRIGUE -- Alignment:**
-*   **Alignment:** Content is well-aligned to JD responsibilities (routing, latency improvements, observability standards), so this passes. The intrigue score depends on Voice/Structure; currently the text feels a bit like an "effort" rather than the confident understatement of the sample voice ("quietly obsessed...").
-
-**Revision Feedback Summary:**
-1.  **Clarify Mentoring Claim:** Be precise about promotion outcomes to avoid implying all mentees promoted when only 2 did (per CV). Adjust phrasing from "...like four engineers under my guidance experienced" to "helped two of four achieve promotions within 18 months..." or similar factual grounding if claiming specific success.
-2.  **Structure/Metric Separation:** Split the Northstar and Brightwave achievements into distinct sentences/paragraphs or use clear transitions ("Additionally, earlier at...") rather than combining them in a single dense block to match Sample Voice clarity.
-3.  **Tone Adjustment:** Ensure short clauses remain punchy like sample; avoid long run-on descriptions of infrastructure policy (while reducing cloud spend) unless phrased very casually as the sample does for similar details.
-
-Original task: Write a cover letter for this job, grounded in the CV, matching the candidate's writing style from the samples.
+Write a cover letter for this job, grounded in the CV, matching the candidate's writing style from the samples.
 
 === CV (source of truth) ===
 # Jane Q. Candidate
 
 example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
 
-> **EXAMPLE FILE — replace this with your real, comprehensive CV before running jobme.**
-> This markdown CV is the *content* source of truth: include everything (full history,
+> **DEMO FILE — do NOT replace this with your real CV.** It's a sample so jobme runs out of
+> the box and shows the expected format. For real use, keep your own `cv.md` outside the
+> tracked examples — in a private mirror's `me/` folder (see README) or any `--input-dir` —
+> so your personal data is never committed.
+>
+> The markdown CV is the *content* source of truth: include everything (full history,
 > detail, metrics). The pipeline selects and rephrases from here to fit each job — it
 > will never invent facts that are not present in this file.
 
 ## Summary
 
-Senior software engineer with 9+ years building reliable backend systems and developer
-tooling. Strength in distributed systems, API design, and mentoring. Comfortable owning
-features end to end, from design through on-call.
+Senior software engineer with 9+ years building reliable, high-throughput backend systems
+and the developer tooling around them. Strength in distributed systems, API design, event
+streaming, and observability, with a track record of measurable latency, reliability, and
+cost improvements. Comfortable owning features end to end, from design docs through on-call,
+and known for mentoring engineers and raising code-quality standards across teams.
 
 ## Skills
 
-- **Languages:** Python, Go, TypeScript, SQL
-- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform
-- **Data:** PostgreSQL, Redis, Kafka, BigQuery
-- **Practices:** CI/CD, observability, code review, technical writing, mentoring
+- **Languages:** Python, Go, TypeScript, SQL, Bash
+- **Backend:** REST and webhook APIs, gRPC, event-driven architecture, idempotency and
+  exactly-once processing, schema design and migrations, caching strategies
+- **Distributed systems:** sharding and partitioning, leader election, backpressure, queue
+  and stream processing, eventual consistency, idempotent consumers
+- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform, GitHub Actions, ArgoCD
+- **Data & messaging:** PostgreSQL, Redis, Kafka, BigQuery, Elasticsearch
+- **Observability:** Prometheus, Grafana, OpenTelemetry, distributed tracing, SLOs and error
+  budgets, structured logging
+- **Practices:** CI/CD, incident response, code review, technical writing, mentoring,
+  design-review facilitation, threat modeling
 
 ## Experience
 
 ### Staff Software Engineer — Northstar Logistics (Jan 2021 – Present)
-- Led redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms.
-- Introduced a service-level observability standard adopted by 6 teams.
-- Mentored 4 engineers; 2 were promoted to senior within 18 months.
-- Owned on-call rotation tooling; reduced pages per week by 40%.
+
+- Led the redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms and
+  sustaining it under a 3x traffic increase over two years.
+- Re-architected the routing data model around event sourcing, eliminating a class of
+  double-assignment bugs that had caused three customer-facing incidents per quarter.
+- Introduced a service-level observability standard (structured logs, RED metrics, trace
+  propagation) adopted by 6 teams; it became the template for new-service onboarding.
+- Designed a Kafka-based event backbone for shipment state changes, decoupling six services
+  and enabling near-real-time tracking updates for customers.
+- Owned the on-call rotation tooling and runbook program; reduced pages per week by 40% and
+  cut mean time to acknowledge from 12 minutes to under 4.
+- Mentored 4 engineers through structured growth plans; 2 were promoted to senior within
+  18 months. Ran the weekly design-review forum for the platform group.
+- Drove a migration from a monolithic scheduler to a horizontally scalable worker pool on
+  Kubernetes, enabling the business to onboard two enterprise customers without re-architecting.
 
 ### Senior Software Engineer — Brightwave Analytics (Jun 2017 – Dec 2020)
-- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day.
-- Designed the public REST + webhook API used by 300+ customers.
-- Cut cloud spend 25% by right-sizing and introducing autoscaling policies.
+
+- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day with end-to-end
+  latency under 5 seconds at p99.
+- Designed and shipped the public REST + webhook API used by 300+ customers, including the
+  versioning, auth, and rate-limiting model still in use today.
+- Implemented idempotent, exactly-once consumers that survived broker failovers without
+  duplicate processing, replacing a fragile at-least-once design.
+- Cut cloud spend 25% by right-sizing instances, introducing autoscaling policies, and moving
+  cold analytics data to tiered storage.
+- Introduced contract testing between services, reducing integration regressions caught in
+  staging by roughly half.
+- Led the on-call response for the ingestion platform and authored the postmortem template
+  the engineering org standardized on.
 
 ### Software Engineer — Civic Data Foundation (Aug 2015 – May 2017)
-- Developed open-data portals (Django) serving 1M+ monthly visitors.
-- Partnered with non-technical stakeholders to ship grant-reporting tools.
+
+- Developed open-data portals (Django, PostgreSQL) serving 1M+ monthly visitors.
+- Built a grant-reporting toolset with non-technical stakeholders, replacing a manual
+  spreadsheet process and cutting reporting time from days to hours.
+- Added full-text search (Elasticsearch) and a Redis caching layer that brought common
+  queries from seconds to milliseconds.
+- Set up the team's first CI pipeline and automated deploys, ending manual release nights.
+
+### Software Engineering Intern — Helio Systems (Jun 2014 – Aug 2014)
+
+- Built an internal metrics dashboard (Python, PostgreSQL) still used by the platform team.
+- Automated a nightly data-reconciliation job, removing a recurring manual task.
 
 ## Education
 
 **B.S., Computer Science** — State University (2015). GPA 3.8. Dean's List.
+Relevant coursework: distributed systems, databases, operating systems, algorithms,
+networks.
+
+## Certifications
+
+- AWS Certified Solutions Architect – Associate (2022).
 
 ## Selected Projects & Recognition
 
-- Maintainer of an open-source CLI for log triage (3k+ GitHub stars).
-- Internal "Engineering Excellence" award, Northstar Logistics, 2022.
+- Maintainer of an open-source CLI for log triage (3k+ GitHub stars); used in several
+  companies' incident workflows.
+- Internal "Engineering Excellence" award, Northstar Logistics, 2022, for the routing-service
+  reliability work.
 - Conference talk: "Observability for Small Teams," RegionalPyCon 2023.
+- Conference talk: "Idempotency Patterns for Event-Driven Systems," GoWest 2022.
+- Author of an internal guide to writing idempotent consumers that was adopted as required
+  reading for new backend hires.
+- Open-source contributor to a popular Go Kafka client (several merged PRs improving
+  consumer-group rebalancing).
 
 === JOB DESCRIPTION ===
 Senior Backend Engineer — Atlas Freight (Remote, US)
@@ -417,14 +602,16 @@ Jane
 
 Dear Hiring Team,
 
-I have spent the last decade quietly obsessed with making backend systems that people can trust. When a pager stays silent through peak routing volume, that is work I am proudest of. Atlas Freight needs engineers who own reliability at scale as a first-class feature rather than an afterthought.
+I have spent the last decade quietly obsessed with one thing: making backend systems that people can trust. The work I am proudest of is the kind that never makes the news — a routing service that stays fast under load, a pager that stays silent through a holiday weekend.
 
-In my current role leading logistics software for Northstar Logistics, I redesigned the order-routing service to cut p99 latency from 1.2s down to 280ms and introduced observability standards adopted by six teams. Earlier at Brightwave Analytics, I built streaming ingestion pipelines in Go handling two billion events per day while reducing cloud spend twenty-five percent through right-sizing policies.
+Atlas Freight draws me because routing and tracking millions of shipments is exactly the problem I have lived inside. At Northstar Logistics I led the redesign of our order-routing service, cutting p99 latency from 1.2s to 280ms and holding it there through a 3x traffic increase. I re-architected that routing model around event sourcing, which eliminated a class of double-assignment bugs that had been causing customer-facing incidents every quarter. And I built a Kafka-based event backbone for shipment state changes that decoupled six services and gave customers near-real-time tracking. Owning services end to end, in Go and Python on cloud platforms, is simply how I work.
 
-I mentor generously—helping two of four engineers achieve promotions within eighteen months—and measure what ships on the platform. My background with Kafka and PostgreSQL aligns well with your requirements to track high-volume shipments. I would welcome the chance to talk about how my work can support Atlas Freight's systems.
+I also believe reliability and observability are first-class features, not afterthoughts. I introduced a service-level observability standard — structured logs, RED metrics, trace propagation — that six teams adopted as their onboarding template, and I rebuilt our on-call tooling and runbooks to cut pages per week by 40% and mean time to acknowledge from 12 minutes to under 4. Reducing on-call burden across teams is a problem I genuinely enjoy.
+
+I write clearly, I mentor generously, and I measure what I ship. Two of the engineers I mentored were promoted to senior within 18 months, and I have a habit of turning hard-won lessons into guides others can use. I would welcome the chance to bring that same pragmatism to your shipping systems.
 
 Warmly,
-Jane Q. Candidate
+Jane
 
 #### Agent: cover-reviewer
 
@@ -445,50 +632,107 @@ Task: Write a cover letter for this job, grounded in the CV, matching the candid
 
 example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
 
-> **EXAMPLE FILE — replace this with your real, comprehensive CV before running jobme.**
-> This markdown CV is the *content* source of truth: include everything (full history,
+> **DEMO FILE — do NOT replace this with your real CV.** It's a sample so jobme runs out of
+> the box and shows the expected format. For real use, keep your own `cv.md` outside the
+> tracked examples — in a private mirror's `me/` folder (see README) or any `--input-dir` —
+> so your personal data is never committed.
+>
+> The markdown CV is the *content* source of truth: include everything (full history,
 > detail, metrics). The pipeline selects and rephrases from here to fit each job — it
 > will never invent facts that are not present in this file.
 
 ## Summary
 
-Senior software engineer with 9+ years building reliable backend systems and developer
-tooling. Strength in distributed systems, API design, and mentoring. Comfortable owning
-features end to end, from design through on-call.
+Senior software engineer with 9+ years building reliable, high-throughput backend systems
+and the developer tooling around them. Strength in distributed systems, API design, event
+streaming, and observability, with a track record of measurable latency, reliability, and
+cost improvements. Comfortable owning features end to end, from design docs through on-call,
+and known for mentoring engineers and raising code-quality standards across teams.
 
 ## Skills
 
-- **Languages:** Python, Go, TypeScript, SQL
-- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform
-- **Data:** PostgreSQL, Redis, Kafka, BigQuery
-- **Practices:** CI/CD, observability, code review, technical writing, mentoring
+- **Languages:** Python, Go, TypeScript, SQL, Bash
+- **Backend:** REST and webhook APIs, gRPC, event-driven architecture, idempotency and
+  exactly-once processing, schema design and migrations, caching strategies
+- **Distributed systems:** sharding and partitioning, leader election, backpressure, queue
+  and stream processing, eventual consistency, idempotent consumers
+- **Infrastructure:** AWS, GCP, Docker, Kubernetes, Terraform, GitHub Actions, ArgoCD
+- **Data & messaging:** PostgreSQL, Redis, Kafka, BigQuery, Elasticsearch
+- **Observability:** Prometheus, Grafana, OpenTelemetry, distributed tracing, SLOs and error
+  budgets, structured logging
+- **Practices:** CI/CD, incident response, code review, technical writing, mentoring,
+  design-review facilitation, threat modeling
 
 ## Experience
 
 ### Staff Software Engineer — Northstar Logistics (Jan 2021 – Present)
-- Led redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms.
-- Introduced a service-level observability standard adopted by 6 teams.
-- Mentored 4 engineers; 2 were promoted to senior within 18 months.
-- Owned on-call rotation tooling; reduced pages per week by 40%.
+
+- Led the redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms and
+  sustaining it under a 3x traffic increase over two years.
+- Re-architected the routing data model around event sourcing, eliminating a class of
+  double-assignment bugs that had caused three customer-facing incidents per quarter.
+- Introduced a service-level observability standard (structured logs, RED metrics, trace
+  propagation) adopted by 6 teams; it became the template for new-service onboarding.
+- Designed a Kafka-based event backbone for shipment state changes, decoupling six services
+  and enabling near-real-time tracking updates for customers.
+- Owned the on-call rotation tooling and runbook program; reduced pages per week by 40% and
+  cut mean time to acknowledge from 12 minutes to under 4.
+- Mentored 4 engineers through structured growth plans; 2 were promoted to senior within
+  18 months. Ran the weekly design-review forum for the platform group.
+- Drove a migration from a monolithic scheduler to a horizontally scalable worker pool on
+  Kubernetes, enabling the business to onboard two enterprise customers without re-architecting.
 
 ### Senior Software Engineer — Brightwave Analytics (Jun 2017 – Dec 2020)
-- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day.
-- Designed the public REST + webhook API used by 300+ customers.
-- Cut cloud spend 25% by right-sizing and introducing autoscaling policies.
+
+- Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day with end-to-end
+  latency under 5 seconds at p99.
+- Designed and shipped the public REST + webhook API used by 300+ customers, including the
+  versioning, auth, and rate-limiting model still in use today.
+- Implemented idempotent, exactly-once consumers that survived broker failovers without
+  duplicate processing, replacing a fragile at-least-once design.
+- Cut cloud spend 25% by right-sizing instances, introducing autoscaling policies, and moving
+  cold analytics data to tiered storage.
+- Introduced contract testing between services, reducing integration regressions caught in
+  staging by roughly half.
+- Led the on-call response for the ingestion platform and authored the postmortem template
+  the engineering org standardized on.
 
 ### Software Engineer — Civic Data Foundation (Aug 2015 – May 2017)
-- Developed open-data portals (Django) serving 1M+ monthly visitors.
-- Partnered with non-technical stakeholders to ship grant-reporting tools.
+
+- Developed open-data portals (Django, PostgreSQL) serving 1M+ monthly visitors.
+- Built a grant-reporting toolset with non-technical stakeholders, replacing a manual
+  spreadsheet process and cutting reporting time from days to hours.
+- Added full-text search (Elasticsearch) and a Redis caching layer that brought common
+  queries from seconds to milliseconds.
+- Set up the team's first CI pipeline and automated deploys, ending manual release nights.
+
+### Software Engineering Intern — Helio Systems (Jun 2014 – Aug 2014)
+
+- Built an internal metrics dashboard (Python, PostgreSQL) still used by the platform team.
+- Automated a nightly data-reconciliation job, removing a recurring manual task.
 
 ## Education
 
 **B.S., Computer Science** — State University (2015). GPA 3.8. Dean's List.
+Relevant coursework: distributed systems, databases, operating systems, algorithms,
+networks.
+
+## Certifications
+
+- AWS Certified Solutions Architect – Associate (2022).
 
 ## Selected Projects & Recognition
 
-- Maintainer of an open-source CLI for log triage (3k+ GitHub stars).
-- Internal "Engineering Excellence" award, Northstar Logistics, 2022.
+- Maintainer of an open-source CLI for log triage (3k+ GitHub stars); used in several
+  companies' incident workflows.
+- Internal "Engineering Excellence" award, Northstar Logistics, 2022, for the routing-service
+  reliability work.
 - Conference talk: "Observability for Small Teams," RegionalPyCon 2023.
+- Conference talk: "Idempotency Patterns for Event-Driven Systems," GoWest 2022.
+- Author of an internal guide to writing idempotent consumers that was adopted as required
+  reading for new backend hires.
+- Open-source contributor to a popular Go Kafka client (several merged PRs improving
+  consumer-group rebalancing).
 
 === JOB DESCRIPTION ===
 Senior Backend Engineer — Atlas Freight (Remote, US)
@@ -531,14 +775,16 @@ Jane
 Response:
 Dear Hiring Team,
 
-I have spent the last decade quietly obsessed with making backend systems that people can trust. When a pager stays silent through peak routing volume, that is work I am proudest of. Atlas Freight needs engineers who own reliability at scale as a first-class feature rather than an afterthought.
+I have spent the last decade quietly obsessed with one thing: making backend systems that people can trust. The work I am proudest of is the kind that never makes the news — a routing service that stays fast under load, a pager that stays silent through a holiday weekend.
 
-In my current role leading logistics software for Northstar Logistics, I redesigned the order-routing service to cut p99 latency from 1.2s down to 280ms and introduced observability standards adopted by six teams. Earlier at Brightwave Analytics, I built streaming ingestion pipelines in Go handling two billion events per day while reducing cloud spend twenty-five percent through right-sizing policies.
+Atlas Freight draws me because routing and tracking millions of shipments is exactly the problem I have lived inside. At Northstar Logistics I led the redesign of our order-routing service, cutting p99 latency from 1.2s to 280ms and holding it there through a 3x traffic increase. I re-architected that routing model around event sourcing, which eliminated a class of double-assignment bugs that had been causing customer-facing incidents every quarter. And I built a Kafka-based event backbone for shipment state changes that decoupled six services and gave customers near-real-time tracking. Owning services end to end, in Go and Python on cloud platforms, is simply how I work.
 
-I mentor generously—helping two of four engineers achieve promotions within eighteen months—and measure what ships on the platform. My background with Kafka and PostgreSQL aligns well with your requirements to track high-volume shipments. I would welcome the chance to talk about how my work can support Atlas Freight's systems.
+I also believe reliability and observability are first-class features, not afterthoughts. I introduced a service-level observability standard — structured logs, RED metrics, trace propagation — that six teams adopted as their onboarding template, and I rebuilt our on-call tooling and runbooks to cut pages per week by 40% and mean time to acknowledge from 12 minutes to under 4. Reducing on-call burden across teams is a problem I genuinely enjoy.
+
+I write clearly, I mentor generously, and I measure what I ship. Two of the engineers I mentored were promoted to senior within 18 months, and I have a habit of turning hard-won lessons into guides others can use. I would welcome the chance to bring that same pragmatism to your shipping systems.
 
 Warmly,
-Jane Q. Candidate
+Jane
 
 **assistant:**
 

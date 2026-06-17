@@ -4,89 +4,103 @@
 <meta charset="utf-8" />
 <title>Jane Q. Candidate — Cover Letter</title>
 <style>
-  @page { size: Letter; margin: 0.5in; }
+  @page { size: Letter; margin: 1in; }
   * { box-sizing: border-box; }
   body {
     font-family: "Georgia", "Times New Roman", serif;
     color: #1a1a1a;
-    font-size: 10.5pt;
-    line-height: 1.45; /* Increased for cover letter readability */
+    font-size: 11pt;
+    line-height: 1.5;
     margin: 0;
-    padding-bottom: 2em;
   }
-  header { border-bottom: 2px solid #2b5797; padding-bottom: 8px; margin-bottom: 16px; display:flex; flex-direction:column;} 
-  h1 { font-size: 24pt; color: #2b5797; letter-spacing: 0.5px; }
-  .contact { font-size: 8pt; color: #3a3a3c; margin-bottom:6px; padding-left: 1ch;} /* Indented like a footer signature */ 
-  p, li { text-align: left; }
-  
-  section { break-inside: avoid; display:block; margin-bottom:20px;}
-  
-  h3.slate-title { font-size: 9pt; color:#666; border:none; padding-top:5px;} /* Optional separator header */ 
+  .sheet {
+    max-width: 7in;
+    margin: 0 auto;
+  }
+  header {
+    border-bottom: 2px solid #2b5797;
+    padding-bottom: 10px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: 22pt;
+    margin: 0 0 2px;
+    color: #2b5797;
+    letter-spacing: 0.5px;
+  }
+  .contact {
+    font-size: 9pt;
+    color: #444;
+  }
+  .date {
+    color: #555;
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+  .salutation {
+    margin-bottom: 14px;
+  }
+  p {
+    margin: 0 0 12px;
+  }
+  .body-text p {
+    text-align: justify;
+  }
+  .closing {
+    margin-top: 24px;
+  }
+  .signature {
+    color: #2b5797;
+    font-weight: bold;
+    margin-top: 4px;
+  }
+  strong { color: #2b5797; }
 </style>
-<script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  "@type": "Person"
-}
-</script>
 </head>
 <body>
+  <div class="sheet">
+    <header>
+      <h1>Jane Q. Candidate</h1>
+      <div class="contact">
+        example@example.com · (555) 123-4567 · San Francisco, CA · linkedin.com/in/janeqcandidate
+      </div>
+    </header>
 
-<header class="header-block">
-  <h1>Jane Q. Candidate</h1>
-  
-  <!-- 
-     NOTE: Contact details from Resume Exemplar kept as placeholders to maintain layout integrity,
-     but specific letter sign-off at bottom replaces header info visually for formal documents.
-  -->
-  <div class="contact">example@example.com · (555) 123-4567 · San Francisco, CA</div>
-  
-  <!-- Signature area handled below in content to ensure print layout flows correctly -->
+    <div class="salutation">Dear Hiring Team,</div>
 
-</header>
+    <div class="body-text">
+      <p>I have spent the last decade quietly obsessed with one thing: making backend
+         systems that people can trust. The work I am proudest of is the kind that never
+         makes the news — a routing service that stays fast under load, a pager that stays
+         silent through a holiday weekend.</p>
 
-<!-- Salutation Block -->
-<section>
-   <p style="font-style:italic; margin-top:-0.8em; color:#2b5797;"><strong>Dear Hiring Team,</strong></p> 
-</section>
+      <p>Atlas Freight draws me because routing and tracking millions of shipments is
+         exactly the problem I have lived inside. At Northstar Logistics I led the redesign
+         of our order-routing service, cutting p99 latency from 1.2s to 280ms and holding it
+         there through a 3x traffic increase. I re-architected that routing model around
+         event sourcing, which eliminated a class of double-assignment bugs that had been
+         causing customer-facing incidents every quarter. And I built a Kafka-based event
+         backbone for shipment state changes that decoupled six services and gave customers
+         near-real-time tracking. Owning services end to end, in Go and Python on cloud
+         platforms, is simply how I work.</p>
 
-<div class="content-block">
+      <p>I also believe reliability and observability are first-class features, not
+         afterthoughts. I introduced a service-level observability standard — structured
+         logs, RED metrics, trace propagation — that six teams adopted as their onboarding
+         template, and I rebuilt our on-call tooling and runbooks to cut pages per week by
+         40% and mean time to acknowledge from 12 minutes to under 4. Reducing on-call
+         burden across teams is a problem I genuinely enjoy.</p>
 
-  <!-- Introduction Paragraph -->
-  <div class="section-content">
-    <p>I have spent the last decade quietly obsessed with making backend systems that people can trust. When a pager stays silent through peak routing volume, that is work I am proudest of. Atlas Freight needs engineers who own reliability at scale as a first-class feature rather than an afterthought.</p>
-
-    <!-- Experience/Impact Paragraph (Split into paragraphs for readability vs list) -->
-    <div class="section-content">
-        <p>In my current role leading logistics software for Northstar Logistics, I redesigned the order-routing service to cut p99 latency from 1.2s down to 280ms and introduced observability standards adopted by six teams. Earlier at Brightwave Analytics, I built streaming ingestion pipelines in Go handling two billion events per day while reducing cloud spend twenty-five percent through right-sizing policies.</p>
-        
-        <p>I mentor generously—helping two of four engineers achieve promotions within eighteen months—and measure what ships on the platform. My background with Kafka and PostgreSQL aligns well with your requirements to track high-volume shipments. I would welcome the chance to talk about how my work can support Atlas Freight's systems.</p>
+      <p>I write clearly, I mentor generously, and I measure what I ship. Two of the
+         engineers I mentored were promoted to senior within 18 months, and I have a habit
+         of turning hard-won lessons into guides others can use. I would welcome the chance
+         to bring that same pragmatism to your shipping systems.</p>
     </div>
 
+    <div class="closing">
+      <p>Warmly,</p>
+      <p class="signature">Jane</p>
+    </div>
   </div>
-
-</div>
-
-<!-- Sign-off Block -->
-<div style="text-align:right; margin-top:3em;">
-   <hr /> <!-- Separator line for letter head, or just whitespace -->
-</div>
-    
-  <section class="signature-block" style="margin-left:5ch"> 
-    <p><strong>Jane Q. Candidate</strong></p>
-  </section>
-
-<style> /* Inline override to ensure signature block aligns right */ .content-block { display:inline; } section.signature-block{ width:30%; }</style>
-
-<footer class="signature-area" style="margin-top:-2em;"> 
-    <!-- The 'Warmly' is often part of the body or separate. Following standard letter format with explicit sign-off below -->
-</footer>
-
-
-<div class="contact"> Warmly,</div> 
-
-<!-- Manual adjustment for proper vertical spacing at bottom to handle print cut-offs if necessary, though 0.5in page margins usually suffice -->
-
-<style> /* Final override of layout */ header { margin-bottom:32px; } .section-content > p { padding-top:4px;} section.signature-block{ width:auto; border:none} </style>
 </body>
 </html>

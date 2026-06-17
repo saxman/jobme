@@ -8,14 +8,19 @@ accuracy (no fabrication) and intrigue bar.
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
+from typing import Callable, TypeVar
 
 import aimu
 from aimu.agents import EvaluatorOptimizer
 
 from . import prompts, render
 from .config import (
+    API_RETRY_BASE_DELAY,
     Config,
+    LOW_FILL_WARNING,
+    MAX_API_RETRIES,
     MAX_PAGE_FIT_RETRIES,
     MAX_REVIEW_ROUNDS,
     RESUME_FILL_TARGET,
@@ -24,6 +29,52 @@ from .config import (
 )
 from .io_utils import Inputs, load_inputs, make_output_dir, slugify
 from .pdf import check_backend, html_to_pdf, page_count, page_fill
+
+
+# --- Transient-failure retry ---------------------------------------------------
+
+_T = TypeVar("_T")
+
+
+def _transient_api_errors() -> tuple[type[BaseException], ...]:
+    """Exception types worth retrying. Built defensively so a missing provider SDK
+    (the extras are optional) never breaks import."""
+    errors: list[type[BaseException]] = [ConnectionError, TimeoutError]
+    for module, names in (
+        ("anthropic", ("APIConnectionError", "APITimeoutError", "RateLimitError", "InternalServerError")),
+        ("httpx", ("TransportError",)),
+    ):
+        try:
+            mod = __import__(module)
+        except ImportError:
+            continue
+        errors += [getattr(mod, n) for n in names if hasattr(mod, n)]
+    return tuple(errors)
+
+
+_TRANSIENT_API_ERRORS = _transient_api_errors()
+
+
+def _with_retry(label: str, fn: Callable[[], _T]) -> _T:
+    """Run ``fn``, retrying transient API failures with exponential backoff.
+
+    Each pipeline step is self-contained and re-runnable (fresh client/loop, idempotent
+    file writes), so a retry simply re-executes the whole step. Non-transient errors
+    propagate immediately.
+    """
+    for attempt in range(MAX_API_RETRIES + 1):
+        try:
+            return fn()
+        except _TRANSIENT_API_ERRORS as error:
+            if attempt == MAX_API_RETRIES:
+                raise
+            delay = API_RETRY_BASE_DELAY * 2**attempt
+            print(
+                f"[jobme]   {label}: transient API error ({type(error).__name__}); "
+                f"retry {attempt + 1}/{MAX_API_RETRIES} in {delay:.0f}s..."
+            )
+            time.sleep(delay)
+    raise AssertionError("unreachable")  # loop either returns or raises
 
 
 # --- Steps ---------------------------------------------------------------------
@@ -60,73 +111,90 @@ def _render_resume(
     content: str,
     out_dir: Path,
     pdf_backend: str,
-    resume_loop: EvaluatorOptimizer,
 ) -> tuple[Path, Path, int, float | None]:
     """Render content to HTML, then fit it close to (but never over) two pages.
 
-    Each round picks one action: condense if over the hard page limit; else, if
-    underfilled, add genuine CV content once for a large shortfall (the renderer has no
-    CV, so this re-engages the accuracy-reviewed content generator) or stretch typography
-    for a small one. Typography only ever closes a small gap -- a large shortfall that
-    content can't fill means the CV is genuinely thin, so we accept a shorter resume
-    rather than inflate the type.
+    Each round picks one LLM action by priority: condense if over the hard page limit; else,
+    if underfilled, add genuine CV content once for a large shortfall (the renderer has no
+    CV, so this is a grounded, accuracy-bound generation) or nudge typography for a smaller
+    one. The emitted resume is the **best fitting render across all attempts** -- the fullest
+    one that still fits the page limit -- so an overshoot is never shipped.
 
-    The <=TARGET_RESUME_PAGES guarantee holds by construction: only renders that fit are
-    eligible to be emitted (best-fill-so-far), so an expansion that overshoots is simply
-    discarded. Degrades to condense-only when fill can't be measured (no Chromium).
+    If even after a content expansion the best fill stays low, the CV likely lacks enough
+    relevant material for two pages; we emit the best result and warn.
     """
     client = aimu.client(model, system=prompts.RESUME_HTML_SYSTEM)
     content_path = out_dir / "resume_content.md"
     html_path = out_dir / "resume.html"
     pdf_path = out_dir / "resume.pdf"
 
+    # Fullest render so far that fits the page limit, with the content it was rendered from.
+    best: tuple[str, str, int, float | None] | None = None
+    disk_html = ""  # which render currently backs html_path/pdf_path
+    content_expanded = False
+
     def rerender(html: str) -> tuple[int, float | None]:
+        nonlocal best, disk_html
         html_path.write_text(html, encoding="utf-8")
         html_to_pdf(html_path, pdf_path, backend=pdf_backend)
-        return page_count(pdf_path), page_fill(html_path)
+        disk_html = html
+        pages, fill = page_count(pdf_path), page_fill(html_path)
+        if pages <= TARGET_RESUME_PAGES and (best is None or (fill or 0) > (best[3] or 0)):
+            best = (html, content, pages, fill)
+        return pages, fill
 
-    html = render.render_resume_html(client, inputs.resume_html, content)
-    pages, fill = rerender(html)
-    disk_html = html  # tracks which render currently backs html_path/pdf_path
+    pages, fill = rerender(render.render_resume_html(client, inputs.resume_html, content))
 
-    # Best version that fits the page limit, with the content it was rendered from.
-    best = (html, content, pages, fill) if pages <= TARGET_RESUME_PAGES else None
-
-    condensed = False
-    content_expanded = False
     for _ in range(MAX_PAGE_FIT_RETRIES):
+        if fill is None:
+            break  # can't measure; the trim fallback below handles any page overflow
+        if pages <= TARGET_RESUME_PAGES and fill >= RESUME_FILL_TARGET:
+            break  # fits and well-filled
         if pages > TARGET_RESUME_PAGES:
             print(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
             html = render.condense_resume_html(client, pages, TARGET_RESUME_PAGES)
-            condensed = True
-        elif condensed or fill is None or fill >= RESUME_FILL_TARGET:
-            break  # condensed (don't bounce back over), unmeasurable, or full enough
-        elif RESUME_FILL_TARGET - fill > TYPOGRAPHY_MAX_STRETCH:
-            if content_expanded:
-                break  # CV content is exhausted; too short for type to close tastefully
+        elif RESUME_FILL_TARGET - fill > TYPOGRAPHY_MAX_STRETCH and not content_expanded:
             print(f"[jobme]   resume fills ~{fill:.2f} pages; adding CV detail...")
-            content = resume_loop.generator.run(
-                prompts.RESUME_EXPAND_CONTENT_TASK.format(fill=fill, target=TARGET_RESUME_PAGES)
+            content = aimu.chat(
+                prompts.RESUME_EXPAND_CONTENT_TASK.format(
+                    fill=fill,
+                    target=TARGET_RESUME_PAGES,
+                    cv=inputs.cv_markdown,
+                    job_description=inputs.job_description,
+                    content=content,
+                ),
+                model=model,
+                system=prompts.RESUME_GENERATOR_SYSTEM,
             )
             html = render.render_resume_html(client, inputs.resume_html, content)
             content_expanded = True
         else:
-            print(f"[jobme]   resume fills ~{fill:.2f} pages; stretching layout...")
-            html = render.expand_resume_typography(client, fill, TARGET_RESUME_PAGES)
-
+            print(f"[jobme]   resume spans {pages}p / fills ~{fill:.2f}; tuning typography...")
+            html = render.fit_resume_html(client, pages, fill, TARGET_RESUME_PAGES, RESUME_FILL_TARGET)
         pages, fill = rerender(html)
-        disk_html = html
-        if pages <= TARGET_RESUME_PAGES and (best is None or (fill or 0) > (best[3] or 0)):
-            best = (html, content, pages, fill)
 
-    # Emit the best fitting version; the latest render may be an overshoot we discard.
-    # If no render ever fit (couldn't condense within budget), keep the last attempt.
-    if best is not None:
-        html, content, pages, fill = best
-        if html is not disk_html:
-            html_path.write_text(html, encoding="utf-8")
-            html_to_pdf(html_path, pdf_path, backend=pdf_backend)
+    # Fallback: nothing ever fit the page limit. Trim with the lossy condense until it does.
+    if best is None:
+        for _ in range(MAX_PAGE_FIT_RETRIES):
+            if pages <= TARGET_RESUME_PAGES:
+                break
+            print(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
+            pages, fill = rerender(render.condense_resume_html(client, pages, TARGET_RESUME_PAGES))
+        best = (disk_html, content, pages, fill)
+
+    # Emit the best fitting render; the latest one may be an overshoot we discard.
+    html, content, pages, fill = best
+    if html != disk_html:
+        html_path.write_text(html, encoding="utf-8")
+        html_to_pdf(html_path, pdf_path, backend=pdf_backend)
     content_path.write_text(content, encoding="utf-8")
+
+    if content_expanded and fill is not None and fill < LOW_FILL_WARNING:
+        print(
+            f"[jobme] WARNING: best resume fills only ~{fill:.2f} of {TARGET_RESUME_PAGES} "
+            "pages even after expansion; the CV may lack enough relevant content for a full "
+            "two-page resume."
+        )
 
     return html_path, pdf_path, pages, fill
 
@@ -226,28 +294,34 @@ def run(config: Config) -> dict:
     """Run the full pipeline for one job posting; returns paths to produced files."""
     inputs = load_inputs(config.input_dir, config.jd_path)
     check_backend(config.pdf_backend)  # fail fast before any LLM calls
-    slug = _job_slug(config.model, inputs.job_description, config.name)
+    slug = _with_retry("job slug", lambda: _job_slug(config.model, inputs.job_description, config.name))
     out_dir = make_output_dir(config.output_dir, slug)
 
     print(f"[jobme] Job: {slug}")
     print(f"[jobme] Model: {config.model} | PDF backend: {config.pdf_backend}")
 
     print("[jobme] Tailoring resume (accuracy & intrigue review)...")
-    resume_content, resume_loop = _tailor_resume(config.model, inputs)
+    resume_content, resume_loop = _with_retry(
+        "tailoring resume", lambda: _tailor_resume(config.model, inputs)
+    )
     (out_dir / "resume_content.md").write_text(resume_content, encoding="utf-8")
 
     print("[jobme] Rendering resume HTML and fitting to 2 pages...")
-    resume_html, resume_pdf, pages, fill = _render_resume(
-        config.model, inputs, resume_content, out_dir, config.pdf_backend, resume_loop
+    resume_html, resume_pdf, pages, fill = _with_retry(
+        "rendering resume",
+        lambda: _render_resume(config.model, inputs, resume_content, out_dir, config.pdf_backend),
     )
 
     print("[jobme] Writing cover letter (accuracy & intrigue review)...")
-    cover_content, cover_loop = _tailor_cover(config.model, inputs)
+    cover_content, cover_loop = _with_retry(
+        "writing cover letter", lambda: _tailor_cover(config.model, inputs)
+    )
     (out_dir / "cover_letter.txt").write_text(cover_content, encoding="utf-8")
 
     print("[jobme] Rendering cover letter HTML and PDF...")
-    cover_html, cover_pdf = _render_cover(
-        config.model, inputs, cover_content, out_dir, config.pdf_backend
+    cover_html, cover_pdf = _with_retry(
+        "rendering cover letter",
+        lambda: _render_cover(config.model, inputs, cover_content, out_dir, config.pdf_backend),
     )
 
     artifacts = [resume_html, resume_pdf, cover_html, cover_pdf]

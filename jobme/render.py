@@ -32,14 +32,20 @@ def condense_resume_html(client, pages: int, target: int) -> str:
     return strip_code_fences(client.chat(task))
 
 
-def expand_resume_typography(client, fill: float, target: int) -> str:
-    """Follow-up turn: stretch layout/typography to fill closer to ``target`` pages.
+def fit_resume_html(
+    client, pages: int, fill: float, target_pages: int, target_fill: float
+) -> str:
+    """Follow-up turn: nudge layout/typography toward ``target_fill`` within ``target_pages``.
 
-    Adjusts spacing and sizing only -- content is unchanged -- so this never touches the
-    accuracy-reviewed text. Used for small shortfalls the typography can tastefully close.
+    Bidirectional (tightens an overflow or loosens a sparse page) and content-preserving --
+    it changes only spacing and sizing, never the accuracy-reviewed text.
     """
-    task = prompts.RESUME_EXPAND_TYPOGRAPHY_TASK.format(fill=fill, target=target)
+    task = prompts.RESUME_FIT_TASK.format(
+        pages=pages, fill=fill, target_pages=target_pages, target_fill=target_fill
+    )
     return strip_code_fences(client.chat(task))
+
+
 
 
 def render_cover_html(client, exemplar_html: str, content: str) -> str:

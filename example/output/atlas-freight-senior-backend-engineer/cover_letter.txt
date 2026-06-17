@@ -1,10 +1,12 @@
 Dear Hiring Team,
 
-I have spent the last decade quietly obsessed with making backend systems that people can trust. When a pager stays silent through peak routing volume, that is work I am proudest of. Atlas Freight needs engineers who own reliability at scale as a first-class feature rather than an afterthought.
+I have spent the last decade quietly obsessed with one thing: making backend systems that people can trust. The work I am proudest of is the kind that never makes the news — a routing service that stays fast under load, a pager that stays silent through a holiday weekend.
 
-In my current role leading logistics software for Northstar Logistics, I redesigned the order-routing service to cut p99 latency from 1.2s down to 280ms and introduced observability standards adopted by six teams. Earlier at Brightwave Analytics, I built streaming ingestion pipelines in Go handling two billion events per day while reducing cloud spend twenty-five percent through right-sizing policies.
+Atlas Freight draws me because routing and tracking millions of shipments is exactly the problem I have lived inside. At Northstar Logistics I led the redesign of our order-routing service, cutting p99 latency from 1.2s to 280ms and holding it there through a 3x traffic increase. I re-architected that routing model around event sourcing, which eliminated a class of double-assignment bugs that had been causing customer-facing incidents every quarter. And I built a Kafka-based event backbone for shipment state changes that decoupled six services and gave customers near-real-time tracking. Owning services end to end, in Go and Python on cloud platforms, is simply how I work.
 
-I mentor generously—helping two of four engineers achieve promotions within eighteen months—and measure what ships on the platform. My background with Kafka and PostgreSQL aligns well with your requirements to track high-volume shipments. I would welcome the chance to talk about how my work can support Atlas Freight's systems.
+I also believe reliability and observability are first-class features, not afterthoughts. I introduced a service-level observability standard — structured logs, RED metrics, trace propagation — that six teams adopted as their onboarding template, and I rebuilt our on-call tooling and runbooks to cut pages per week by 40% and mean time to acknowledge from 12 minutes to under 4. Reducing on-call burden across teams is a problem I genuinely enjoy.
+
+I write clearly, I mentor generously, and I measure what I ship. Two of the engineers I mentored were promoted to senior within 18 months, and I have a habit of turning hard-won lessons into guides others can use. I would welcome the chance to bring that same pragmatism to your shipping systems.
 
 Warmly,
-Jane Q. Candidate
+Jane

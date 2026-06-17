@@ -15,7 +15,8 @@ writes a cover letter in your voice — then exports both as PDFs.
   fabrication; every claim must be traceable to your CV — and **intrigue** — compelling and
   aligned to the posting.
 - **Two-page printable HTML resume** rendered in the style/format of your existing HTML
-  resume, with an automatic page-count fit check (renders, counts pages, condenses if over).
+  resume, with an automatic fit loop (renders, measures real page count and fill, then
+  condenses, adds genuine CV detail, or adjusts typography to fill close to two pages).
 - **Cover letter in your own voice**, learned from optional sample letters, held to the same
   accuracy/intrigue bar.
 - **Send-ready PDFs** of both the resume and the cover letter.
@@ -103,14 +104,14 @@ git push origin main
 --jd           Path to the job-description file. (required)
 --input-dir    Inputs directory (default: input).
 --output-dir   Where results are written (default: output).
---model        AIMU model string; overrides JOBME_MODEL. Default anthropic:claude-sonnet-4-6.
+--model        AIMU model string; overrides JOBME_MODEL. Default anthropic:claude-opus-4-8.
 --pdf-backend  playwright (default) | weasyprint
 --name         Explicit "Company - Title" label for the output folder.
 ```
 
 ### Configuration
 
-- **Model** — `--model` or the `JOBME_MODEL` env var. Examples: `anthropic:claude-sonnet-4-6`
+- **Model** — `--model` or the `JOBME_MODEL` env var. Examples: `anthropic:claude-opus-4-8`
   (default, needs `ANTHROPIC_API_KEY`); `ollama:qwen3:8b` for a fully local run, no API key.
 - **PDF backend** — `--pdf-backend`. `playwright` (default) needs a one-time
   `playwright install chromium`. `weasyprint` needs GTK native libraries (an extra install
@@ -123,11 +124,30 @@ Put these in your `input/` folder:
 | File | Role | Required |
 |------|------|----------|
 | `cv.md` | **Content** source of truth — your full CV in markdown | yes |
-| `resume.html` | **Style/format** template — your existing styled resume | yes |
+| `resume.html` | **Style/format** template — a complete styled resume | yes |
 | `cover_letter-1.txt`, `cover_letter-2.txt`, … | Writing-style samples (your voice) | optional |
 
-jobme only uses facts present in `cv.md` — it never invents experience — and the two-page
-resume it generates reuses the look of your `resume.html`.
+**`cv.md` — your complete CV (the content).** jobme tailors each resume by *selecting and
+rephrasing* from this file and **never invents anything that isn't in it**, so make it
+comprehensive: full work history with dates, titles, and measurable accomplishments, plus
+skills, education, projects, and certifications. Use clear markdown headings (e.g. Summary,
+Skills, Experience, Education). The richer it is, the better jobme can tailor — and since a
+resume can only be as full as the relevant material in your CV, a thin CV yields a short
+resume (jobme prints a warning when it can't fill two pages from what you provided).
+
+**`resume.html` — your style/format template (the look).** jobme reuses this file's CSS,
+fonts, layout, and section structure, swapping in the tailored content. It should be:
+- a **complete, well-filled two-page resume**, not a stub — the renderer mimics its density
+  and structure, so a full example produces a full result and a sparse one produces a sparse
+  result;
+- **self-contained**, with all styling in an inline `<style>` block;
+- **print-ready for US Letter**, with page-break rules that let sections *flow across the page
+  boundary*: keep a heading with its section and a role with its bullets (`break-after: avoid`),
+  but don't wrap whole sections in `break-inside: avoid` — that strands large gaps and leaves
+  the pages underfilled.
+
+**Cover-letter samples (optional).** One or more `.txt` files of letters you've written; jobme
+matches their tone and phrasing. Omit them and it writes in a neutral professional voice.
 
 > The committed [`example/`](example/) folder holds **demo files** (`cv.md`, `resume.html`,
 > `cover_letter-1.txt`, `jd_sample.txt`) plus a sample run in [`example/output/`](example/output/)

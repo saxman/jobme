@@ -5,7 +5,7 @@ description = "Generative AI for effective job hunting: agentically tailor a res
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "aimu[anthropic,ollama]>=0.9.0",
+    "aimu[anthropic,ollama]>=0.9.1",
     "playwright",
     "weasyprint",
     "pypdf",

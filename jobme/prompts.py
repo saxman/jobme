@@ -22,9 +22,11 @@ RESUME_GENERATOR_SYSTEM = (
     "embellish employers, titles, dates, degrees, metrics, or skills. You may reorder, "
     "select, emphasize, and rephrase real content to align with the job, but every claim "
     "must be traceable to the CV.\n"
-    "Aim for content that comfortably fits a two-page resume. Output clean Markdown with "
-    "clear section headings (e.g. Summary, Experience, Skills, Education). Output only the "
-    "tailored resume content -- no commentary."
+    "TARGET LENGTH: produce enough strong, relevant content to fill about two pages -- "
+    "substantive enough to fill two FULL pages, but not so much that it would overflow onto "
+    "a third. Do not pad with filler to hit the length. Output clean Markdown with clear "
+    "section headings (e.g. Summary, Experience, Skills, Education). Output only the tailored "
+    "resume content -- no commentary."
 )
 
 RESUME_GENERATOR_TASK = (
@@ -67,32 +69,38 @@ RESUME_HTML_TASK = (
 )
 
 RESUME_CONDENSE_TASK = (
-    "The rendered resume is {pages} pages, but it must fit within {target} pages. Revise "
-    "the HTML to be more concise (tighten spacing, trim the least-relevant lines, adjust "
-    "font sizing) while preserving the style and all accurate content. Aim to fill close to "
-    "{target} full pages -- condense just enough to fit, not so much that the last page ends "
-    "up sparse. Output ONLY the raw HTML document."
+    "The rendered resume is {pages} pages but must fit within {target}. Make the SMALLEST "
+    "change that brings it from {pages} to {target} pages: FIRST tighten spacing, margins, "
+    "and font sizing; only then trim the least-relevant lines. Do NOT rewrite or gut the "
+    "resume -- this is a light edit to remove the overflow, not a rewrite. Preserve as much "
+    "accurate content as possible, and the result MUST still fill close to {target} FULL "
+    "pages (never leave the last page sparse). Output ONLY the raw HTML document."
 )
 
-RESUME_EXPAND_TYPOGRAPHY_TASK = (
-    "The rendered resume currently fills only about {fill:.2f} of {target} pages, so the "
-    "last page looks sparse. Adjust ONLY the layout and typography -- increase font size, "
-    "line height, section spacing, and margins within tasteful, professional bounds -- so "
-    "the content fills close to {target} full pages. Do NOT add, remove, or reword any "
-    "content, and do NOT exceed {target} pages. Preserve the overall style. Output ONLY the "
-    "raw HTML document."
+RESUME_FIT_TASK = (
+    "The rendered resume currently spans {pages} page(s) and fills about {fill:.2f} of "
+    "{target_pages} pages. Adjust ONLY the layout and typography -- font size, line height, "
+    "section spacing, and margins, within tasteful professional bounds -- so it fills close "
+    "to {target_fill:.2f} of {target_pages} pages and never exceeds {target_pages} pages. If "
+    "it is too sparse, increase sizing and spacing; if it overflows, tighten them. Do NOT "
+    "add, remove, or reword any content. Preserve the overall style. Output ONLY the raw "
+    "HTML document."
 )
 
-# Sent to the resume CONTENT generator (which holds the CV and the strict accuracy rule),
-# not the HTML renderer, so any added detail still comes only from the CV.
+# Self-contained (re-supplies the CV, JD, and current draft) because the generator agent
+# resets its conversation on every run when a system prompt is set -- it does NOT remember
+# the original tailoring turn. Paired with RESUME_GENERATOR_SYSTEM so the accuracy rule holds.
 RESUME_EXPAND_CONTENT_TASK = (
-    "Your tailored resume content above fills only about {fill:.2f} of {target} pages once "
-    "rendered, leaving it noticeably short. Expand it with additional genuine, relevant "
-    "detail drawn ONLY from the CV you were given -- surface more real accomplishments, "
-    "supporting context, projects, or skills that strengthen the fit for this job -- so it "
-    "fills close to {target} full pages. The STRICT ACCURACY RULE still applies: invent "
-    "nothing; every claim must be traceable to the CV. Do not pad with filler. Keep the "
-    "Markdown structure. Output only the revised resume content."
+    "The tailored resume draft below fills only about {fill:.2f} of {target} pages once "
+    "rendered, leaving it noticeably short. Expand the draft with additional genuine, "
+    "relevant detail drawn ONLY from the CV -- surface more real accomplishments, supporting "
+    "context, projects, or skills that strengthen the fit for this job -- so it fills close "
+    "to {target} full pages. The STRICT ACCURACY RULE still applies: invent nothing; every "
+    "claim must be traceable to the CV. Do not pad with filler. Keep the Markdown structure. "
+    "Output only the revised resume content.\n\n"
+    "=== CV (source of truth) ===\n{cv}\n\n"
+    "=== JOB DESCRIPTION ===\n{job_description}\n\n"
+    "=== CURRENT RESUME DRAFT (expand this) ===\n{content}"
 )
 
 # --- Cover letter: write (generator) + review (evaluator) ----------------------

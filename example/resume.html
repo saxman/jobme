@@ -6,7 +6,8 @@
 
   This file is the STYLE/FORMAT template: the pipeline reuses its CSS, layout, fonts, and
   structure when rendering the tailored two-page resume. The text here is only placeholder;
-  the actual content comes from the cv.md in your chosen --input-dir.
+  the actual content comes from the cv.md in your chosen --input-dir. Keep it a complete,
+  well-filled two-page resume so the renderer mimics a full, dense layout (not a sparse one).
 -->
 <html lang="en">
 <head>
@@ -29,14 +30,17 @@
     font-size: 11pt; text-transform: uppercase; letter-spacing: 1px;
     color: #2b5797; border-bottom: 1px solid #ccc;
     padding-bottom: 2px; margin: 14px 0 6px;
+    break-after: avoid;
   }
-  .role { display: flex; justify-content: space-between; font-weight: bold; }
+  .role { display: flex; justify-content: space-between; font-weight: bold; break-after: avoid; }
   .role .dates { font-weight: normal; color: #555; font-style: italic; }
   .org { color: #2b5797; font-weight: bold; }
-  ul { margin: 4px 0 10px; padding-left: 18px; }
-  li { margin-bottom: 3px; }
+  ul { margin: 4px 0 10px; padding-left: 18px; break-before: avoid; }
+  li { margin-bottom: 3px; break-inside: avoid; }
   .skills span { display: inline-block; margin-right: 4px; }
-  section { break-inside: avoid; }
+  /* Let sections flow across the page break so both pages pack tightly. Don't keep whole
+     sections together (that wastes space); only avoid orphaned headings, split roles, and
+     bullets broken across pages (the rules above). */
 </style>
 </head>
 <body>
@@ -49,15 +53,25 @@
 
   <section>
     <h2>Summary</h2>
-    <p>Senior software engineer with 9+ years building reliable backend systems and
-       developer tooling, with strength in distributed systems and API design.</p>
+    <p>Senior software engineer with 9+ years building reliable, high-throughput backend
+       systems and the developer tooling around them. Strength in distributed systems, API
+       design, event streaming, and observability, with a track record of measurable latency,
+       reliability, and cost improvements. Comfortable owning features end to end, from design
+       docs through on-call, and known for mentoring engineers and raising code-quality
+       standards across teams.</p>
   </section>
 
   <section>
     <h2>Skills</h2>
-    <p class="skills"><strong>Languages:</strong> Python, Go, TypeScript, SQL ·
-       <strong>Infra:</strong> AWS, GCP, Kubernetes, Terraform ·
-       <strong>Data:</strong> PostgreSQL, Kafka, BigQuery</p>
+    <p class="skills"><strong>Languages:</strong> Python, Go, TypeScript, SQL, Bash ·
+       <strong>Backend:</strong> REST &amp; webhook APIs, gRPC, event-driven architecture,
+       idempotency &amp; exactly-once processing, schema design &amp; migrations, caching ·
+       <strong>Distributed systems:</strong> sharding, leader election, backpressure, queue
+       &amp; stream processing, eventual consistency ·
+       <strong>Infra:</strong> AWS, GCP, Docker, Kubernetes, Terraform, GitHub Actions, ArgoCD ·
+       <strong>Data &amp; messaging:</strong> PostgreSQL, Redis, Kafka, BigQuery, Elasticsearch ·
+       <strong>Observability:</strong> Prometheus, Grafana, OpenTelemetry, tracing, SLOs ·
+       <strong>Practices:</strong> CI/CD, incident response, code review, technical writing</p>
   </section>
 
   <section>
@@ -66,21 +80,72 @@
     <div class="role"><span><span class="org">Northstar Logistics</span> — Staff Software Engineer</span>
       <span class="dates">Jan 2021 – Present</span></div>
     <ul>
-      <li>Led redesign of order-routing service, cutting p99 latency 1.2s → 280ms.</li>
-      <li>Introduced an observability standard adopted by 6 teams.</li>
+      <li>Led redesign of the order-routing service, cutting p99 latency from 1.2s to 280ms and
+          sustaining it under a 3x traffic increase.</li>
+      <li>Re-architected the routing data model around event sourcing, eliminating a class of
+          double-assignment bugs behind three incidents per quarter.</li>
+      <li>Introduced a service-level observability standard (structured logs, RED metrics, trace
+          propagation) adopted by 6 teams.</li>
+      <li>Designed a Kafka-based event backbone for shipment state changes, decoupling six
+          services and enabling near-real-time tracking.</li>
+      <li>Owned on-call tooling and runbooks; cut pages per week by 40% and MTTA from 12 to under
+          4 minutes.</li>
     </ul>
 
     <div class="role"><span><span class="org">Brightwave Analytics</span> — Senior Software Engineer</span>
       <span class="dates">Jun 2017 – Dec 2020</span></div>
     <ul>
-      <li>Built a streaming ingestion pipeline handling 2B events/day.</li>
-      <li>Designed the public API used by 300+ customers.</li>
+      <li>Built a streaming ingestion pipeline (Kafka + Go) handling 2B events/day at under 5s
+          p99 latency.</li>
+      <li>Designed and shipped the public REST + webhook API used by 300+ customers, including
+          versioning, auth, and rate limiting.</li>
+      <li>Implemented idempotent, exactly-once consumers that survived broker failovers without
+          duplicate processing.</li>
+      <li>Cut cloud spend 25% via right-sizing, autoscaling policies, and tiered storage for cold
+          data.</li>
+      <li>Introduced contract testing between services, halving integration regressions caught in
+          staging.</li>
+      <li>Authored the postmortem template the engineering org standardized on.</li>
+    </ul>
+
+    <div class="role"><span><span class="org">Civic Data Foundation</span> — Software Engineer</span>
+      <span class="dates">Aug 2015 – May 2017</span></div>
+    <ul>
+      <li>Developed open-data portals (Django, PostgreSQL) serving 1M+ monthly visitors.</li>
+      <li>Built a grant-reporting toolset with non-technical stakeholders, cutting reporting time
+          from days to hours.</li>
+      <li>Added full-text search (Elasticsearch) and Redis caching, taking common queries from
+          seconds to milliseconds.</li>
+      <li>Set up the team's first CI pipeline and automated deploys, ending manual release nights.</li>
+    </ul>
+
+    <div class="role"><span><span class="org">Helio Systems</span> — Software Engineering Intern</span>
+      <span class="dates">Jun 2014 – Aug 2014</span></div>
+    <ul>
+      <li>Built an internal metrics dashboard (Python, PostgreSQL) still used by the platform team.</li>
+      <li>Automated a nightly data-reconciliation job, removing a recurring manual task.</li>
     </ul>
   </section>
 
   <section>
-    <h2>Education</h2>
-    <p><strong>B.S., Computer Science</strong> — State University, 2015.</p>
+    <h2>Projects &amp; Recognition</h2>
+    <ul>
+      <li>Maintainer of an open-source CLI for log triage (3k+ GitHub stars), used in several
+          companies' incident workflows.</li>
+      <li>Open-source contributor to a popular Go Kafka client, improving consumer-group
+          rebalancing.</li>
+      <li>Internal "Engineering Excellence" award, Northstar Logistics, 2022, for routing-service
+          reliability work.</li>
+      <li>Conference talks: "Observability for Small Teams" (RegionalPyCon 2023) and "Idempotency
+          Patterns for Event-Driven Systems" (GoWest 2022).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Certifications &amp; Education</h2>
+    <p><strong>AWS Certified Solutions Architect – Associate</strong> (2022).</p>
+    <p><strong>B.S., Computer Science</strong> — State University, 2015. GPA 3.8, Dean's List.
+       Coursework: distributed systems, databases, operating systems, algorithms, networks.</p>
   </section>
 </body>
 </html>
