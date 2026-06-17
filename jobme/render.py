@@ -32,6 +32,16 @@ def condense_resume_html(client, pages: int, target: int) -> str:
     return strip_code_fences(client.chat(task))
 
 
+def expand_resume_typography(client, fill: float, target: int) -> str:
+    """Follow-up turn: stretch layout/typography to fill closer to ``target`` pages.
+
+    Adjusts spacing and sizing only -- content is unchanged -- so this never touches the
+    accuracy-reviewed text. Used for small shortfalls the typography can tastefully close.
+    """
+    task = prompts.RESUME_EXPAND_TYPOGRAPHY_TASK.format(fill=fill, target=target)
+    return strip_code_fences(client.chat(task))
+
+
 def render_cover_html(client, exemplar_html: str, content: str) -> str:
     """Render the approved cover letter text as a styled HTML letter."""
     task = prompts.COVER_HTML_TASK.format(exemplar_html=exemplar_html, content=content)

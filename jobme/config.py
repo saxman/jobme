@@ -11,11 +11,18 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-DEFAULT_MODEL = "anthropic:claude-sonnet-4-6"
+DEFAULT_MODEL = "anthropic:claude-opus-4-8"
 DEFAULT_PDF_BACKEND = "playwright"
 MAX_REVIEW_ROUNDS = 3
-MAX_PAGE_FIT_RETRIES = 2
+MAX_PAGE_FIT_RETRIES = 3
 TARGET_RESUME_PAGES = 2
+
+# The fit loop aims to fill the resume to RESUME_FILL_TARGET pages (a margin below
+# TARGET_RESUME_PAGES, since the fill estimate runs short of physical pagination and we
+# must never spill onto a third page). A shortfall larger than TYPOGRAPHY_MAX_STRETCH
+# pages is closed by adding genuine CV content; a smaller one by stretching typography.
+RESUME_FILL_TARGET = 1.85
+TYPOGRAPHY_MAX_STRETCH = 0.25
 
 
 @dataclass

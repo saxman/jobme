@@ -18,10 +18,12 @@ from .config import (
     Config,
     MAX_PAGE_FIT_RETRIES,
     MAX_REVIEW_ROUNDS,
+    RESUME_FILL_TARGET,
     TARGET_RESUME_PAGES,
+    TYPOGRAPHY_MAX_STRETCH,
 )
 from .io_utils import Inputs, load_inputs, make_output_dir, slugify
-from .pdf import check_backend, html_to_pdf, page_count
+from .pdf import check_backend, html_to_pdf, page_count, page_fill
 
 
 # --- Steps ---------------------------------------------------------------------
@@ -53,28 +55,80 @@ def _tailor_resume(model: str, inputs: Inputs) -> tuple[str, EvaluatorOptimizer]
 
 
 def _render_resume(
-    model: str, inputs: Inputs, content: str, out_dir: Path, pdf_backend: str
-) -> tuple[Path, Path, int]:
-    """Render content to HTML in the exemplar's style, then fit to 2 pages."""
+    model: str,
+    inputs: Inputs,
+    content: str,
+    out_dir: Path,
+    pdf_backend: str,
+    resume_loop: EvaluatorOptimizer,
+) -> tuple[Path, Path, int, float | None]:
+    """Render content to HTML, then fit it close to (but never over) two pages.
+
+    Each round picks one action: condense if over the hard page limit; else, if
+    underfilled, add genuine CV content once for a large shortfall (the renderer has no
+    CV, so this re-engages the accuracy-reviewed content generator) or stretch typography
+    for a small one. Typography only ever closes a small gap -- a large shortfall that
+    content can't fill means the CV is genuinely thin, so we accept a shorter resume
+    rather than inflate the type.
+
+    The <=TARGET_RESUME_PAGES guarantee holds by construction: only renders that fit are
+    eligible to be emitted (best-fill-so-far), so an expansion that overshoots is simply
+    discarded. Degrades to condense-only when fill can't be measured (no Chromium).
+    """
     client = aimu.client(model, system=prompts.RESUME_HTML_SYSTEM)
+    content_path = out_dir / "resume_content.md"
     html_path = out_dir / "resume.html"
     pdf_path = out_dir / "resume.pdf"
 
-    html = render.render_resume_html(client, inputs.resume_html, content)
-    html_path.write_text(html, encoding="utf-8")
-    html_to_pdf(html_path, pdf_path, backend=pdf_backend)
-    pages = page_count(pdf_path)
-
-    retries = 0
-    while pages > TARGET_RESUME_PAGES and retries < MAX_PAGE_FIT_RETRIES:
-        print(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
-        html = render.condense_resume_html(client, pages, TARGET_RESUME_PAGES)
+    def rerender(html: str) -> tuple[int, float | None]:
         html_path.write_text(html, encoding="utf-8")
         html_to_pdf(html_path, pdf_path, backend=pdf_backend)
-        pages = page_count(pdf_path)
-        retries += 1
+        return page_count(pdf_path), page_fill(html_path)
 
-    return html_path, pdf_path, pages
+    html = render.render_resume_html(client, inputs.resume_html, content)
+    pages, fill = rerender(html)
+    disk_html = html  # tracks which render currently backs html_path/pdf_path
+
+    # Best version that fits the page limit, with the content it was rendered from.
+    best = (html, content, pages, fill) if pages <= TARGET_RESUME_PAGES else None
+
+    condensed = False
+    content_expanded = False
+    for _ in range(MAX_PAGE_FIT_RETRIES):
+        if pages > TARGET_RESUME_PAGES:
+            print(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
+            html = render.condense_resume_html(client, pages, TARGET_RESUME_PAGES)
+            condensed = True
+        elif condensed or fill is None or fill >= RESUME_FILL_TARGET:
+            break  # condensed (don't bounce back over), unmeasurable, or full enough
+        elif RESUME_FILL_TARGET - fill > TYPOGRAPHY_MAX_STRETCH:
+            if content_expanded:
+                break  # CV content is exhausted; too short for type to close tastefully
+            print(f"[jobme]   resume fills ~{fill:.2f} pages; adding CV detail...")
+            content = resume_loop.generator.run(
+                prompts.RESUME_EXPAND_CONTENT_TASK.format(fill=fill, target=TARGET_RESUME_PAGES)
+            )
+            html = render.render_resume_html(client, inputs.resume_html, content)
+            content_expanded = True
+        else:
+            print(f"[jobme]   resume fills ~{fill:.2f} pages; stretching layout...")
+            html = render.expand_resume_typography(client, fill, TARGET_RESUME_PAGES)
+
+        pages, fill = rerender(html)
+        disk_html = html
+        if pages <= TARGET_RESUME_PAGES and (best is None or (fill or 0) > (best[3] or 0)):
+            best = (html, content, pages, fill)
+
+    # Emit the best fitting version; the latest render may be an overshoot we discard.
+    # If no render ever fit (couldn't condense within budget), keep the last attempt.
+    if best is not None:
+        html, content, pages, fill = best
+        if html is not disk_html:
+            html_path.write_text(html, encoding="utf-8")
+            html_to_pdf(html_path, pdf_path, backend=pdf_backend)
+    content_path.write_text(content, encoding="utf-8")
+
+    return html_path, pdf_path, pages, fill
 
 
 def _tailor_cover(model: str, inputs: Inputs) -> tuple[str, EvaluatorOptimizer]:
@@ -136,6 +190,7 @@ def _write_summary(
     config: Config,
     slug: str,
     pages: int,
+    fill: float | None,
     artifacts: list[Path],
     resume_loop: EvaluatorOptimizer,
     cover_loop: EvaluatorOptimizer,
@@ -146,12 +201,13 @@ def _write_summary(
     )
 
     fit = "OK" if pages <= TARGET_RESUME_PAGES else f"over by {pages - TARGET_RESUME_PAGES}"
+    fill_note = f", filling ~{fill:.2f}" if fill is not None else ""
     files = "\n".join(f"- `{p.name}`" for p in artifacts)
     body = (
         f"# jobme run summary: {slug}\n\n"
         f"- **Model:** `{config.model}`\n"
         f"- **PDF backend:** `{config.pdf_backend}`\n"
-        f"- **Resume pages:** {pages} (target {TARGET_RESUME_PAGES} -- {fit})\n\n"
+        f"- **Resume pages:** {pages} (target {TARGET_RESUME_PAGES} -- {fit}{fill_note})\n\n"
         f"## Files produced\n{files}\n"
         f"- `resume_content.md`, `cover_letter.txt` (approved text)\n"
         f"- `trace.json` (machine-readable agent trace)\n\n"
@@ -181,8 +237,8 @@ def run(config: Config) -> dict:
     (out_dir / "resume_content.md").write_text(resume_content, encoding="utf-8")
 
     print("[jobme] Rendering resume HTML and fitting to 2 pages...")
-    resume_html, resume_pdf, pages = _render_resume(
-        config.model, inputs, resume_content, out_dir, config.pdf_backend
+    resume_html, resume_pdf, pages, fill = _render_resume(
+        config.model, inputs, resume_content, out_dir, config.pdf_backend, resume_loop
     )
 
     print("[jobme] Writing cover letter (accuracy & intrigue review)...")
@@ -196,7 +252,7 @@ def run(config: Config) -> dict:
 
     artifacts = [resume_html, resume_pdf, cover_html, cover_pdf]
     summary_path = _write_summary(
-        out_dir, config, slug, pages, artifacts, resume_loop, cover_loop
+        out_dir, config, slug, pages, fill, artifacts, resume_loop, cover_loop
     )
 
     print(f"\n[jobme] Done. Output in {out_dir}")
@@ -210,5 +266,6 @@ def run(config: Config) -> dict:
         "cover_html": cover_html,
         "cover_pdf": cover_pdf,
         "resume_pages": pages,
+        "resume_fill": fill,
         "summary": summary_path,
     }

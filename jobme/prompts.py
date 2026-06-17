@@ -67,10 +67,32 @@ RESUME_HTML_TASK = (
 )
 
 RESUME_CONDENSE_TASK = (
-    "The rendered resume is {pages} pages, but it must fit on exactly {target} pages. "
-    "Revise the HTML to be more concise (tighten spacing, trim the least-relevant lines, "
-    "adjust font sizing) while preserving the style and all accurate content. Output ONLY "
-    "the raw HTML document."
+    "The rendered resume is {pages} pages, but it must fit within {target} pages. Revise "
+    "the HTML to be more concise (tighten spacing, trim the least-relevant lines, adjust "
+    "font sizing) while preserving the style and all accurate content. Aim to fill close to "
+    "{target} full pages -- condense just enough to fit, not so much that the last page ends "
+    "up sparse. Output ONLY the raw HTML document."
+)
+
+RESUME_EXPAND_TYPOGRAPHY_TASK = (
+    "The rendered resume currently fills only about {fill:.2f} of {target} pages, so the "
+    "last page looks sparse. Adjust ONLY the layout and typography -- increase font size, "
+    "line height, section spacing, and margins within tasteful, professional bounds -- so "
+    "the content fills close to {target} full pages. Do NOT add, remove, or reword any "
+    "content, and do NOT exceed {target} pages. Preserve the overall style. Output ONLY the "
+    "raw HTML document."
+)
+
+# Sent to the resume CONTENT generator (which holds the CV and the strict accuracy rule),
+# not the HTML renderer, so any added detail still comes only from the CV.
+RESUME_EXPAND_CONTENT_TASK = (
+    "Your tailored resume content above fills only about {fill:.2f} of {target} pages once "
+    "rendered, leaving it noticeably short. Expand it with additional genuine, relevant "
+    "detail drawn ONLY from the CV you were given -- surface more real accomplishments, "
+    "supporting context, projects, or skills that strengthen the fit for this job -- so it "
+    "fills close to {target} full pages. The STRICT ACCURACY RULE still applies: invent "
+    "nothing; every claim must be traceable to the CV. Do not pad with filler. Keep the "
+    "Markdown structure. Output only the revised resume content."
 )
 
 # --- Cover letter: write (generator) + review (evaluator) ----------------------

@@ -21,7 +21,7 @@ uv run scripts/jobme.py --jd path/to/posting.txt [--input-dir DIR --output-dir D
 There is **no automated test suite**. Verify changes by running the pipeline end-to-end.
 To avoid API cost/keys during development, run against a local model:
 `--model ollama:qwen3:8b` (any installed Ollama model). The default model is
-`anthropic:claude-sonnet-4-6`, which needs `ANTHROPIC_API_KEY` (env or `.env`).
+`anthropic:claude-opus-4-8`, which needs `ANTHROPIC_API_KEY` (env or `.env`).
 
 ## Architecture
 
@@ -33,7 +33,9 @@ CLI ([scripts/jobme.py](scripts/jobme.py) → [jobme/cli.py](jobme/cli.py)) buil
   HTML → PDFs → write `summary.md` + `trace.json`.
 - [jobme/prompts.py](jobme/prompts.py) — all prompt templates (system + task strings).
 - [jobme/render.py](jobme/render.py) — LLM content → self-contained HTML (strips code fences).
-- [jobme/pdf.py](jobme/pdf.py) — modular HTML→PDF (`BACKENDS` registry) + `page_count` (pypdf).
+- [jobme/pdf.py](jobme/pdf.py) — modular HTML→PDF (`BACKENDS` registry), `check_backend`
+  (preflight the converter before LLM calls), `page_count` (pypdf), and `page_fill`
+  (fractional page fill measured in headless Chromium; `None` if unavailable).
 - [jobme/config.py](jobme/config.py) — `Config`, model resolution, and the tunable constants.
 - [jobme/io_utils.py](jobme/io_utils.py) — input loading, slugify, output-dir creation.
 
@@ -50,13 +52,22 @@ CLI ([scripts/jobme.py](scripts/jobme.py) → [jobme/cli.py](jobme/cli.py)) buil
 
 ## Conventions & gotchas
 
-- **Two-page resume is enforced by real page count**, not the LLM: render → `page_count` →
-  if over `TARGET_RESUME_PAGES`, re-prompt to condense (up to `MAX_PAGE_FIT_RETRIES`).
+- **Two-page resume is enforced by real measurement**, not the LLM. The fit loop is
+  two-sided: render → `page_count` + `page_fill` → each round picks one action by priority:
+  (1) over `TARGET_RESUME_PAGES` → condense (this is a hard cap; once condensed it blocks
+  further expansion so the loop can't oscillate over the limit); (2) underfilled below
+  `RESUME_FILL_TARGET` with a large shortfall → add genuine CV content **via the content
+  generator** (never the renderer, which has no CV); (3) a small shortfall → stretch
+  typography only. Bounded by `MAX_PAGE_FIT_RETRIES`. Degrades to condense-only when
+  `page_fill` returns `None` (no Chromium).
 - **Inputs:** `cv.md` = content source of truth, `resume.html` = style/format template,
   `cover_letter*.txt` = optional voice samples. The pipeline must never invent facts absent
   from `cv.md` — keep that constraint in the prompts if you edit them.
 - **Config knobs** live in [jobme/config.py](jobme/config.py): `DEFAULT_MODEL`,
-  `DEFAULT_PDF_BACKEND`, `MAX_REVIEW_ROUNDS`, `MAX_PAGE_FIT_RETRIES`, `TARGET_RESUME_PAGES`.
+  `DEFAULT_PDF_BACKEND`, `MAX_REVIEW_ROUNDS`, `MAX_PAGE_FIT_RETRIES`, `TARGET_RESUME_PAGES`,
+  `RESUME_FILL_TARGET` (fill goal, kept below the hard page cap since `page_fill` reads short
+  of physical pagination), `TYPOGRAPHY_MAX_STRETCH` (shortfall above which the loop adds
+  content instead of stretching type).
 - **PDF backends** are lazily imported so a missing one only errors when selected.
   `weasyprint` needs GTK native libs on Windows; `playwright` is the default.
 - **`example/` is the committed demo** (synthetic inputs + a sample run in `example/output/`).
