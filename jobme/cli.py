@@ -42,8 +42,22 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _load_env() -> None:
+    """Load .env files from the working directory up to the filesystem root.
+
+    load_dotenv() stops at the first .env found, so a project-local .env (e.g. one
+    holding only JOBME_MODEL) would shadow a parent .env holding ANTHROPIC_API_KEY.
+    Walk every ancestor and load each, nearest first; override=False keeps the
+    nearer file's values winning over the farther one's.
+    """
+    for directory in (Path.cwd(), *Path.cwd().parents):
+        env_path = directory / ".env"
+        if env_path.is_file():
+            load_dotenv(env_path, override=False)
+
+
 def main(argv: list[str] | None = None) -> int:
-    load_dotenv()  # pick up ANTHROPIC_API_KEY / JOBME_MODEL from a .env if present
+    _load_env()  # pick up ANTHROPIC_API_KEY / JOBME_MODEL from .env files, parents included
     args = _build_parser().parse_args(argv)
 
     config = Config(
