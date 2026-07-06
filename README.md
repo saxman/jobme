@@ -50,9 +50,12 @@ this is a "private mirror," not the Fork button.)
 3. Install dependencies:
 
    ```
-   uv sync                              # installs dependencies, incl. AIMU from PyPI
+   uv sync                              # installs dependencies + the `jobme` command, incl. AIMU from PyPI
+   source .venv/bin/activate            # activate the venv so `jobme` is on your PATH
    uv run playwright install chromium   # one-time, for the default PDF backend
    ```
+
+   On Windows the activate script is `.venv\Scripts\activate`.
 
 4. Add your materials to the `input/` folder and save them to your private repo:
 
@@ -82,7 +85,7 @@ this is a "private mirror," not the Fork button.)
 Save a job posting to a text file, then run it (once per posting):
 
 ```
-uv run scripts/jobme.py --jd path/to/posting.txt
+jobme --jd path/to/posting.txt
 ```
 
 Results are written to `output/<company-title>/` — committing them archives every run:
@@ -188,7 +191,7 @@ To regenerate it yourself in a plain clone of this project:
 
 ```
 uv sync && uv run playwright install chromium
-uv run scripts/jobme.py --jd example/jd_sample.txt --input-dir example --output-dir example/output
+uv run jobme --jd example/jd_sample.txt --input-dir example --output-dir example/output
 ```
 
 For real use, set up a private copy as in [Getting started](#getting-started) and keep your
