@@ -196,3 +196,51 @@ uv run jobme --jd example/jd_sample.txt --input-dir example --output-dir example
 
 For real use, set up a private copy as in [Getting started](#getting-started) and keep your
 materials in `input/` (runs go to `output/`); both are committed in your private mirror.
+
+## Use from Kokua
+
+jobme registers itself as a [Kokua](https://github.com/saxman/kokua) toolset, so the assistant can
+tailor an application in conversation. Kokua discovers it through an entry point; nothing in Kokua
+changes.
+
+1. Install jobme into Kokua's environment:
+
+   ```bash
+   cd ../kokua && uv add --editable ../jobme
+   uv run playwright install chromium   # once, for the default PDF backend
+   ```
+
+2. Declare the toolset in `$KOKUA_HOME/config.toml`, and gate the expensive tool:
+
+   ```toml
+   [agents.assistant]
+   tools = ["jobme", ...]
+
+   [security]
+   confirm_tools = ["tailor_application", ...]
+
+   [jobme]
+   input_dir = ""        # empty: $KOKUA_HOME/data/jobme/input
+   output_dir = ""       # empty: $KOKUA_HOME/data/jobme/output
+   model = ""            # empty: JOBME_MODEL, then jobme's default
+   pdf_backend = "playwright"
+   ```
+
+   Gating `tailor_application` means a run always needs your approval. It also means jobme can
+   never run in a scheduled task, since a gated tool auto-denies in an unattended turn. That is
+   deliberate for a tool this expensive.
+
+3. Install the skill that teaches the procedure:
+
+   ```bash
+   cp -r jobme/skill "$KOKUA_HOME/data/skills/job-application"
+   ```
+
+   `kokua skills install` only reads Kokua's own bundled skills, so this one is copied by hand.
+   `check_application_setup` reports whether it is in place.
+
+4. Put `cv.md` and `resume.html` in the input directory (plus any `cover_letter*.txt` samples and
+   a `guidance.md`), then ask the assistant to check the setup.
+
+The assistant's model and jobme's model are separate settings. `[jobme] model` is what tailors the
+documents; leaving it empty uses `JOBME_MODEL` or jobme's own default.

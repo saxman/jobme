@@ -18,7 +18,9 @@ uv run playwright install chromium   # one-time, for the default PDF backend
 uv run scripts/jobme.py --jd path/to/posting.txt [--input-dir DIR --output-dir DIR]
 ```
 
-There is **no automated test suite**. Verify changes by running the pipeline end-to-end.
+The test suite is mock-only (`uv run pytest`): no model, no network, no keys. It covers the
+callback, warning, and cancellation plumbing and the Kokua adapter, not the pipeline's output.
+Verify a pipeline change by running it end-to-end.
 To avoid API cost/keys during development, run against a local model:
 `--model ollama:qwen3:8b` (any installed Ollama model). The default model is
 `anthropic:claude-opus-4-8`, which needs `ANTHROPIC_API_KEY` (env or `.env`).
@@ -94,3 +96,14 @@ CLI ([scripts/jobme.py](scripts/jobme.py) → [jobme/cli.py](jobme/cli.py)) buil
   to this public project; do real runs in the mirror.
 - This public repo is meant to be mirrored into private copies that `git fetch upstream`;
   keep changes mergeable and don't commit personal data here.
+- **`jobme/kokua_toolset.py` is the only Kokua-aware module.** It exports the `TOOLSET` Kokua
+  discovers through the `kokua.toolsets` entry point in `pyproject.toml`. jobme does not depend on
+  Kokua and must keep importing and running without it, so nothing else in the package may import
+  `kokua`. The design is in
+  [docs/superpowers/specs/2026-08-28-kokua-integration-design.md](docs/superpowers/specs/2026-08-28-kokua-integration-design.md).
+  Two traps it documents: `pdf.py` uses Playwright's **sync** API, so a run has to stay on a worker
+  thread with no event loop, and the adapter must not copy the CLI's `.env` walking, which is
+  cwd-dependent.
+- **There is now a test suite**, mock-only: `uv run pytest`. It covers the pipeline's progress,
+  warnings, and cancellation plumbing and the whole Kokua adapter, with every model call stubbed.
+  The pipeline itself is still verified by running it end to end.
