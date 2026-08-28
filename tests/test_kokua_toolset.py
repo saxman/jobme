@@ -280,7 +280,15 @@ async def test_channel_progress_mutes_after_cancellation():
 
     send("before cancellation")
     await delivered.wait()  # run_coroutine_threadsafe needs the loop to actually schedule it
+
+    delivered.clear()
     cancel.set()
     send("after cancellation")
+    # If the mute were absent, "after cancellation" would reach notify on the same schedule the
+    # first line just proved out, so this window is long enough to catch a genuine delivery.
+    try:
+        await asyncio.wait_for(delivered.wait(), timeout=0.05)
+    except asyncio.TimeoutError:
+        pass
 
     assert sent == ["before cancellation"]
