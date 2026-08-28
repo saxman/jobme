@@ -8,6 +8,7 @@ accuracy (no fabrication) and intrigue bar.
 from __future__ import annotations
 
 import json
+import threading
 import time
 from pathlib import Path
 from typing import Callable, TypeVar
@@ -36,6 +37,20 @@ from .pdf import check_backend, html_to_pdf, page_count, page_fill
 _T = TypeVar("_T")
 
 
+class RunCancelled(RuntimeError):
+    """The caller asked for the run to stop. Raised at a step boundary, never mid-step.
+
+    A Kokua turn can be stopped while the pipeline runs on a worker thread, and a thread cannot be
+    interrupted. Checking an event between steps is what stops the spend on model calls nobody is
+    waiting for any more.
+    """
+
+
+def _check_cancel(cancel: threading.Event | None) -> None:
+    if cancel is not None and cancel.is_set():
+        raise RunCancelled("cancelled before the next step")
+
+
 def _transient_api_errors() -> tuple[type[BaseException], ...]:
     """Exception types worth retrying. Built defensively so a missing provider SDK
     (the extras are optional) never breaks import."""
@@ -55,7 +70,7 @@ def _transient_api_errors() -> tuple[type[BaseException], ...]:
 _TRANSIENT_API_ERRORS = _transient_api_errors()
 
 
-def _with_retry(label: str, fn: Callable[[], _T]) -> _T:
+def _with_retry(label: str, fn: Callable[[], _T], progress: Callable[[str], None]) -> _T:
     """Run ``fn``, retrying transient API failures with exponential backoff.
 
     Each pipeline step is self-contained and re-runnable (fresh client/loop, idempotent
@@ -69,7 +84,7 @@ def _with_retry(label: str, fn: Callable[[], _T]) -> _T:
             if attempt == MAX_API_RETRIES:
                 raise
             delay = API_RETRY_BASE_DELAY * 2**attempt
-            print(
+            progress(
                 f"[jobme]   {label}: transient API error ({type(error).__name__}); "
                 f"retry {attempt + 1}/{MAX_API_RETRIES} in {delay:.0f}s..."
             )
@@ -122,7 +137,10 @@ def _render_resume(
     content: str,
     out_dir: Path,
     pdf_backend: str,
-) -> tuple[Path, Path, int, float | None]:
+    *,
+    progress: Callable[[str], None],
+    cancel: threading.Event | None,
+) -> tuple[Path, Path, int, float | None, list[str]]:
     """Render content to HTML, then fit it close to (but never over) two pages.
 
     Each round picks one LLM action by priority: condense if over the hard page limit; else,
@@ -157,15 +175,16 @@ def _render_resume(
     pages, fill = rerender(render.render_resume_html(client, inputs.resume_html, content))
 
     for _ in range(MAX_PAGE_FIT_RETRIES):
+        _check_cancel(cancel)
         if fill is None:
             break  # can't measure; the trim fallback below handles any page overflow
         if pages <= TARGET_RESUME_PAGES and fill >= RESUME_FILL_TARGET:
             break  # fits and well-filled
         if pages > TARGET_RESUME_PAGES:
-            print(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
+            progress(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
             html = render.condense_resume_html(client, pages, TARGET_RESUME_PAGES)
         elif RESUME_FILL_TARGET - fill > TYPOGRAPHY_MAX_STRETCH and not content_expanded:
-            print(f"[jobme]   resume fills ~{fill:.2f} pages; adding CV detail...")
+            progress(f"[jobme]   resume fills ~{fill:.2f} pages; adding CV detail...")
             content = aimu.chat(
                 prompts.RESUME_EXPAND_CONTENT_TASK.format(
                     fill=fill,
@@ -180,16 +199,17 @@ def _render_resume(
             html = render.render_resume_html(client, inputs.resume_html, content)
             content_expanded = True
         else:
-            print(f"[jobme]   resume spans {pages}p / fills ~{fill:.2f}; tuning typography...")
+            progress(f"[jobme]   resume spans {pages}p / fills ~{fill:.2f}; tuning typography...")
             html = render.fit_resume_html(client, pages, fill, TARGET_RESUME_PAGES, RESUME_FILL_TARGET)
         pages, fill = rerender(html)
 
     # Fallback: nothing ever fit the page limit. Trim with the lossy condense until it does.
     if best is None:
         for _ in range(MAX_PAGE_FIT_RETRIES):
+            _check_cancel(cancel)
             if pages <= TARGET_RESUME_PAGES:
                 break
-            print(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
+            progress(f"[jobme]   resume is {pages} pages; condensing to {TARGET_RESUME_PAGES}...")
             pages, fill = rerender(render.condense_resume_html(client, pages, TARGET_RESUME_PAGES))
         best = (disk_html, content, pages, fill)
 
@@ -200,14 +220,16 @@ def _render_resume(
         html_to_pdf(html_path, pdf_path, backend=pdf_backend)
     content_path.write_text(content, encoding="utf-8")
 
+    warnings: list[str] = []
     if content_expanded and fill is not None and fill < LOW_FILL_WARNING:
-        print(
-            f"[jobme] WARNING: best resume fills only ~{fill:.2f} of {TARGET_RESUME_PAGES} "
-            "pages even after expansion; the CV may lack enough relevant content for a full "
-            "two-page resume."
+        warning = (
+            f"best resume fills only ~{fill:.2f} of {TARGET_RESUME_PAGES} pages even after "
+            "expansion; the CV may lack enough relevant content for a full two-page resume"
         )
+        warnings.append(warning)
+        progress(f"[jobme] WARNING: {warning}.")
 
-    return html_path, pdf_path, pages, fill
+    return html_path, pdf_path, pages, fill, warnings
 
 
 def _tailor_cover(model: str, inputs: Inputs) -> tuple[str, EvaluatorOptimizer]:
@@ -305,48 +327,66 @@ def _write_summary(
 # --- Entry point ---------------------------------------------------------------
 
 
-def run(config: Config) -> dict:
-    """Run the full pipeline for one job posting; returns paths to produced files."""
+def run(
+    config: Config,
+    *,
+    progress: Callable[[str], None] = print,
+    cancel: threading.Event | None = None,
+) -> dict:
+    """Run the full pipeline for one job posting; returns paths to produced files.
+
+    ``progress`` receives each status line. It defaults to ``print`` so the CLI is unaffected;
+    an embedder (Kokua's toolset) passes a callback that puts the line on its channel instead.
+    ``cancel`` is checked between steps: a set event ends the run with :class:`RunCancelled`
+    rather than paying for the calls still ahead of it.
+    """
     inputs = load_inputs(config.input_dir, config.jd_path)
     check_backend(config.pdf_backend)  # fail fast before any LLM calls
-    slug = _with_retry("job slug", lambda: _job_slug(config.model, inputs.job_description, config.name))
+    _check_cancel(cancel)
+    slug = _with_retry("job slug", lambda: _job_slug(config.model, inputs.job_description, config.name), progress)
     out_dir = make_output_dir(config.output_dir, slug)
 
-    print(f"[jobme] Job: {slug}")
-    print(f"[jobme] Model: {config.model} | PDF backend: {config.pdf_backend}")
+    progress(f"[jobme] Job: {slug}")
+    progress(f"[jobme] Model: {config.model} | PDF backend: {config.pdf_backend}")
 
-    print("[jobme] Tailoring resume (accuracy & intrigue review)...")
+    _check_cancel(cancel)
+    progress("[jobme] Tailoring resume (accuracy & intrigue review)...")
     resume_content, resume_loop = _with_retry(
-        "tailoring resume", lambda: _tailor_resume(config.model, inputs)
+        "tailoring resume", lambda: _tailor_resume(config.model, inputs), progress
     )
     (out_dir / "resume_content.md").write_text(resume_content, encoding="utf-8")
 
-    print("[jobme] Rendering resume HTML and fitting to 2 pages...")
-    resume_html, resume_pdf, pages, fill = _with_retry(
+    _check_cancel(cancel)
+    progress("[jobme] Rendering resume HTML and fitting to 2 pages...")
+    resume_html, resume_pdf, pages, fill, warnings = _with_retry(
         "rendering resume",
-        lambda: _render_resume(config.model, inputs, resume_content, out_dir, config.pdf_backend),
+        lambda: _render_resume(
+            config.model, inputs, resume_content, out_dir, config.pdf_backend, progress=progress, cancel=cancel
+        ),
+        progress,
     )
 
-    print("[jobme] Writing cover letter (accuracy & intrigue review)...")
+    _check_cancel(cancel)
+    progress("[jobme] Writing cover letter (accuracy & intrigue review)...")
     cover_content, cover_loop = _with_retry(
-        "writing cover letter", lambda: _tailor_cover(config.model, inputs)
+        "writing cover letter", lambda: _tailor_cover(config.model, inputs), progress
     )
     (out_dir / "cover_letter.txt").write_text(cover_content, encoding="utf-8")
 
-    print("[jobme] Rendering cover letter HTML and PDF...")
+    _check_cancel(cancel)
+    progress("[jobme] Rendering cover letter HTML and PDF...")
     cover_html, cover_pdf = _with_retry(
         "rendering cover letter",
         lambda: _render_cover(config.model, inputs, cover_content, out_dir, config.pdf_backend),
+        progress,
     )
 
     artifacts = [resume_html, resume_pdf, cover_html, cover_pdf]
-    summary_path = _write_summary(
-        out_dir, config, slug, pages, fill, artifacts, resume_loop, cover_loop
-    )
+    summary_path = _write_summary(out_dir, config, slug, pages, fill, artifacts, resume_loop, cover_loop)
 
-    print(f"\n[jobme] Done. Output in {out_dir}")
+    progress(f"\n[jobme] Done. Output in {out_dir}")
     for path in [*artifacts, summary_path]:
-        print(f"  - {path}")
+        progress(f"  - {path}")
 
     return {
         "output_dir": out_dir,
@@ -357,4 +397,5 @@ def run(config: Config) -> dict:
         "resume_pages": pages,
         "resume_fill": fill,
         "summary": summary_path,
+        "warnings": warnings,
     }

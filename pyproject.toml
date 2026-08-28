@@ -16,6 +16,13 @@ dependencies = [
 [project.scripts]
 jobme = "jobme.cli:main"
 
+[project.optional-dependencies]
+# Mock-only test suite: no model, no network, no API keys.
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -23,3 +30,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["jobme*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The Kokua toolset's tools are async, so their tests are coroutines with no explicit marker.
+asyncio_mode = "auto"
