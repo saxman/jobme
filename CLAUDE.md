@@ -104,6 +104,4 @@ CLI ([scripts/jobme.py](scripts/jobme.py) → [jobme/cli.py](jobme/cli.py)) buil
   Two traps it documents: `pdf.py` uses Playwright's **sync** API, so a run has to stay on a worker
   thread with no event loop, and the adapter must not copy the CLI's `.env` walking, which is
   cwd-dependent.
-- **There is now a test suite**, mock-only: `uv run pytest`. It covers the pipeline's progress,
-  warnings, and cancellation plumbing and the whole Kokua adapter, with every model call stubbed.
-  The pipeline itself is still verified by running it end to end.
+- **There is now a test suite**, mock-only: `uv run pytest` (see Commands above for what it covers).

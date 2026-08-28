@@ -1620,12 +1620,14 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+kokua = [
+    { name = "kokua" },
+]
+
+[package.dev-dependencies]
 dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
-]
-kokua = [
-    { name = "kokua" },
 ]
 
 [package.metadata]
@@ -1635,12 +1637,16 @@ requires-dist = [
     { name = "kokua", marker = "extra == 'kokua'", editable = "../kokua" },
     { name = "playwright" },
     { name = "pypdf" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'" },
     { name = "python-dotenv" },
     { name = "weasyprint" },
 ]
-provides-extras = ["dev", "kokua"]
+provides-extras = ["kokua"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
 
 [[package]]
 name = "joserfc"

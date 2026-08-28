@@ -17,11 +17,6 @@ dependencies = [
 jobme = "jobme.cli:main"
 
 [project.optional-dependencies]
-# Mock-only test suite: no model, no network, no API keys.
-dev = [
-    "pytest",
-    "pytest-asyncio",
-]
 # The Kokua adapter's tests import Kokua. Kokua is not on PyPI, so this extra is only
 # installable from a sibling checkout; see [tool.uv.sources] below. jobme itself never
 # depends on Kokua, and the pipeline runs with it absent.
@@ -31,6 +26,15 @@ kokua = [
 
 [tool.uv.sources]
 kokua = { path = "../kokua", editable = true }
+
+# A dependency group, not an extra: `uv sync` installs the default groups (this one included)
+# with no flag needed, which is what makes the documented `uv run pytest` true on a fresh clone.
+# An extra would need `--all-extras` first.
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
 
 # Kokua discovers a toolset through this group, with no change to its own package. The key is
 # the name an agent declares in [agents.<name>].tools, and it must equal TOOLSET.name.

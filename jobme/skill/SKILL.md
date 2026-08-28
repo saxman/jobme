@@ -2,7 +2,7 @@
 name: job-application
 description: Tailor the user's resume and cover letter to a specific job posting and produce send-ready PDFs. Use when the user shares a job posting, asks to apply somewhere, or asks for a resume tailored to a role.
 license: Apache-2.0
-compatibility: Requires the `jobme` toolset (pip install jobme, then declare "jobme" in the agent's tools).
+compatibility: Requires the `jobme` toolset (see jobme's README, "Use from Kokua", then declare "jobme" in the agent's tools).
 metadata:
   author: jobme
 ---

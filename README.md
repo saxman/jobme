@@ -203,17 +203,26 @@ jobme registers itself as a [Kokua](https://github.com/saxman/kokua) toolset, so
 tailor an application in conversation. Kokua discovers it through an entry point; nothing in Kokua
 changes.
 
-1. Install jobme into Kokua's environment. `uv pip install --editable` installs it without
-   touching Kokua's `pyproject.toml`, which matches "nothing in Kokua changes" above:
+1. Install jobme into Kokua's environment. There are two ways, with a real tradeoff between them:
+
+   - **`uv add --editable ../jobme` (recommended)** records jobme as a dependency of your own
+     Kokua checkout. That costs a `pyproject.toml` edit that a later `git pull` in Kokua can
+     conflict with, but it is the form that survives `uv sync`: a plain `uv sync` is an exact sync
+     that removes any installed package not declared as a dependency (see `uv help sync`), and
+     `uv sync` is the first command in Kokua's own setup and what you run after every pull. This
+     does not make Kokua-the-project depend on jobme; the plugin still arrives purely through the
+     entry point, which is what "nothing in Kokua changes" above means.
+   - **`uv pip install --editable ../jobme`** leaves Kokua's `pyproject.toml` untouched, but the
+     next plain `uv sync` in that checkout silently removes jobme again, and Kokua's next start
+     fails with `agent 'assistant' declares unknown toolset 'jobme'`, an error that says nothing
+     about the sync that caused it. If you use this form, reinstall after every sync, or run
+     `uv sync --inexact`, which keeps packages that aren't declared dependencies.
 
    ```bash
-   cd ../kokua && uv pip install --editable ../jobme
+   cd ../kokua
+   uv add --editable ../jobme
    uv run playwright install chromium   # once, for the default PDF backend
    ```
-
-   If you'd rather have jobme recorded as a dependency of your own Kokua checkout, `uv add
-   --editable ../jobme` does that, at the cost of a `pyproject.toml` edit that a later `git pull`
-   in Kokua can conflict with.
 
 2. Declare the toolset in `$KOKUA_HOME/config.toml`, and gate the expensive tool:
 
@@ -225,21 +234,29 @@ changes.
    confirm_tools = ["tailor_application", ...]
 
    [jobme]
-   input_dir = ""        # empty: $KOKUA_HOME/data/jobme/input
-   output_dir = ""       # empty: $KOKUA_HOME/data/jobme/output
+   input_dir = ""        # empty: <data_dir>/jobme/input (data_dir defaults to $KOKUA_HOME/data)
+   output_dir = ""       # empty: <data_dir>/jobme/output
    model = ""            # empty: JOBME_MODEL, then jobme's default
    pdf_backend = "playwright"
    ```
+
+   `data_dir` defaults to `$KOKUA_HOME/data` but can be set to any absolute path with
+   `[paths].data_dir`, so if you've overridden it, jobme's input and output directories land there
+   instead.
 
    Gating `tailor_application` means a run always needs your approval. It also means jobme can
    never run in a scheduled task, since a gated tool auto-denies in an unattended turn. That is
    deliberate for a tool this expensive.
 
-3. Install the skill that teaches the procedure:
+3. Install the skill that teaches the procedure. From the `../kokua` directory step 1 leaves you
+   in:
 
    ```bash
-   cp -r jobme/skill "$KOKUA_HOME/data/skills/job-application"
+   cp -r ../jobme/jobme/skill "$KOKUA_HOME/data/skills/job-application"
    ```
+
+   (the skills directory is always `<data_dir>/skills`; use the same `data_dir` as above if you've
+   overridden it, since it need not be under `$KOKUA_HOME` at all.)
 
    `kokua skills install` only reads Kokua's own bundled skills, so this one is copied by hand.
    `check_application_setup` reports whether it is in place.

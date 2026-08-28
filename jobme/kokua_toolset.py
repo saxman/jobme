@@ -151,18 +151,20 @@ def _run_pipeline(run_config: Config, progress: Callable[[str], None], cancel: t
         return None
 
 
-def _format_result(result: dict, downloads: Path) -> str:
+def _format_result(result: dict, published: list[tuple[str, Path, str]]) -> str:
     """The whole outcome in one tool result: where it went, how it fits, and every warning.
 
-    Both a filesystem path and a /download link are given for each PDF. The link only resolves in
-    the web front end, and a toolset has no way to ask which front end is attached.
+    Takes the already-published PDF list rather than publishing them itself, so a completed run
+    can still be reported (location, page count, warnings) even when publishing failed. Both a
+    filesystem path and a /download link are given for each published PDF: the link only resolves
+    in the web front end, and a toolset has no way to ask which front end is attached.
     """
     fill = result["resume_fill"]
     lines = [
         f"Tailored application written to {result['output_dir']}.",
         f"Resume: {result['resume_pages']} page(s)" + (f", fill ~{fill:.2f}." if fill is not None else "."),
     ]
-    for label, path, link in _publish(result, downloads):
+    for label, path, link in published:
         lines.append(f"{label}: {path} (web UI: {link})")
     lines += [f"Warning: {warning}." for warning in result.get("warnings", [])]
     return "\n".join(lines)
@@ -190,7 +192,7 @@ def build(ctx: ToolsetContext) -> list:
         if not posting:
             return "No job posting text was supplied. Pass the posting's full text as job_description."
 
-        missing = [name_ for name_ in REQUIRED_INPUTS if not (settings.input_dir / name_).is_file()]
+        missing = [filename for filename in REQUIRED_INPUTS if not (settings.input_dir / filename).is_file()]
         if missing:
             return (
                 f"Cannot tailor an application: {', '.join(missing)} not found in {settings.input_dir}. "
@@ -219,12 +221,26 @@ def build(ctx: ToolsetContext) -> list:
             # boundary. Without this it keeps spending on model calls nobody is waiting for.
             cancel.set()
             raise
-        except (FileNotFoundError, ValueError, RuntimeError) as error:
+        except Exception as error:
+            # Deliberately broad: a revoked ANTHROPIC_API_KEY raises anthropic.AuthenticationError,
+            # a rate limit that survives the retries raises anthropic.RateLimitError, an unpulled
+            # Ollama model raises ollama.ResponseError, and html_to_pdf can raise
+            # playwright.sync_api.Error. None of those are RuntimeError, and none are worth
+            # pre-enumerating: the whole value of this branch is that a several-minute paid run
+            # reports a sentence the user can act on rather than AIMU's generic tool-raised error.
             return f"The application run failed: {error}."
 
         if result is None:
             return "The application run was cancelled before it finished."
-        return _format_result(result, config.downloads_path)
+
+        try:
+            published = _publish(result, config.downloads_path)
+        except Exception as error:
+            # Publishing is copying files after the real work is done; its failure must not erase
+            # the report of a run that already finished and was already paid for.
+            report = _format_result(result, [])
+            return f"{report}\nWarning: the PDFs could not be copied to downloads ({error})."
+        return _format_result(result, published)
 
     @tool
     async def check_application_setup() -> str:
@@ -236,9 +252,9 @@ def build(ctx: ToolsetContext) -> list:
         settings = resolve_settings(config)
         lines = [f"Input directory: {settings.input_dir}", f"Output directory: {settings.output_dir}"]
 
-        for name in REQUIRED_INPUTS:
-            state = "present" if (settings.input_dir / name).is_file() else "MISSING (required)"
-            lines.append(f"{name}: {state}")
+        for filename in REQUIRED_INPUTS:
+            state = "present" if (settings.input_dir / filename).is_file() else "MISSING (required)"
+            lines.append(f"{filename}: {state}")
 
         samples = sorted(settings.input_dir.glob("cover_letter*.txt")) if settings.input_dir.is_dir() else []
         lines.append(f"cover_letter*.txt voice samples: {len(samples)} (optional)")

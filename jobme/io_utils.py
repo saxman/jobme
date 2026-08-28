@@ -63,8 +63,12 @@ def slugify(value: str) -> str:
 
 
 def make_output_dir(output_dir: Path, slug: str) -> Path:
-    """Create and return a timestamp-prefixed run dir, e.g. ``output_dir/20260616-143052_slug``."""
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    """Create and return a timestamp-prefixed run dir, e.g. ``output_dir/20260616-143052-123456_slug``.
+
+    Microsecond precision, matching the posting filename: two runs of the same slug within the
+    same second would otherwise share a directory and overwrite each other's PDFs.
+    """
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     target = output_dir / f"{stamp}_{slug}"
     target.mkdir(parents=True, exist_ok=True)
     return target

@@ -85,6 +85,8 @@ async def test_check_reports_a_ready_setup(tmp_path, monkeypatch):
 
     report = await _tools(config)["check_application_setup"]()
 
+    assert "cv.md: present" in report
+    assert "resume.html: present" in report
     assert "MISSING" not in report
     assert "ANTHROPIC_API_KEY" not in report
 
@@ -265,6 +267,77 @@ async def test_a_failed_run_reports_the_reason(tmp_path, monkeypatch):
     report = await _tools(config)["tailor_application"]("We are hiring.")
 
     assert "cv.md" in report and "empty" in report
+
+
+async def test_a_non_runtime_error_from_the_pipeline_is_reported_rather_than_raised(tmp_path, monkeypatch):
+    """A revoked API key, a surviving rate limit, and an unpulled Ollama model all raise something
+    that is not a RuntimeError. The catch in tailor_application has to be broad enough to answer
+    all of them with a sentence instead of letting AIMU's generic tool-error message through."""
+
+    class _AuthError(Exception):
+        pass
+
+    def fail(config, *, progress, cancel):
+        raise _AuthError("the API key was revoked")
+
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", fail)
+
+    report = await _tools(config)["tailor_application"]("We are hiring.")
+
+    assert "the API key was revoked" in report
+    assert "failed" in report
+
+
+async def test_tailor_application_still_reports_location_and_pages_when_publishing_fails(tmp_path, monkeypatch):
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run())
+
+    def refuse_to_publish(result, downloads):
+        raise OSError("downloads is not writable")
+
+    monkeypatch.setattr(kokua_toolset, "_publish", refuse_to_publish)
+
+    report = await _tools(config)["tailor_application"]("We are hiring an engineer.")
+
+    assert "2 page" in report
+    assert "acme-engineer" in report
+    assert "downloads is not writable" in report
+
+
+async def test_cancelling_the_task_sets_the_pipelines_cancel_event(tmp_path, monkeypatch):
+    """The property that actually stops the spend. A stopped Kokua turn cancels the awaiting task
+    rather than the worker thread (a thread cannot be interrupted), so the CancelledError handler
+    has to set the ``cancel`` event the pipeline was handed, or the thread runs to completion on
+    calls nobody is waiting for any more."""
+    started = threading.Event()
+    release = threading.Event()
+    recorded: dict[str, threading.Event] = {}
+
+    def blocking_run(config, *, progress, cancel):
+        recorded["cancel"] = cancel
+        started.set()
+        release.wait(timeout=5)
+        return None
+
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", blocking_run)
+
+    tool = _tools(config)["tailor_application"]
+    task = asyncio.create_task(tool("We are hiring an engineer."))
+    try:
+        await asyncio.to_thread(started.wait, 5)
+
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        assert recorded["cancel"].is_set()
+    finally:
+        release.set()  # let the worker thread finish so it does not outlive the test
 
 
 async def test_channel_progress_mutes_after_cancellation():

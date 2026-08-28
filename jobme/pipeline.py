@@ -70,12 +70,18 @@ def _transient_api_errors() -> tuple[type[BaseException], ...]:
 _TRANSIENT_API_ERRORS = _transient_api_errors()
 
 
-def _with_retry(label: str, fn: Callable[[], _T], progress: Callable[[str], None]) -> _T:
+def _with_retry(
+    label: str,
+    fn: Callable[[], _T],
+    progress: Callable[[str], None],
+    cancel: threading.Event | None = None,
+) -> _T:
     """Run ``fn``, retrying transient API failures with exponential backoff.
 
     Each pipeline step is self-contained and re-runnable (fresh client/loop, idempotent
     file writes), so a retry simply re-executes the whole step. Non-transient errors
-    propagate immediately.
+    propagate immediately. ``cancel`` is checked before sleeping out the backoff, so a
+    cancelled run does not pay for retries nobody is waiting for any more.
     """
     for attempt in range(MAX_API_RETRIES + 1):
         try:
@@ -88,6 +94,7 @@ def _with_retry(label: str, fn: Callable[[], _T], progress: Callable[[str], None
                 f"[jobme]   {label}: transient API error ({type(error).__name__}); "
                 f"retry {attempt + 1}/{MAX_API_RETRIES} in {delay:.0f}s..."
             )
+            _check_cancel(cancel)
             time.sleep(delay)
     raise AssertionError("unreachable")  # loop either returns or raises
 
@@ -343,7 +350,9 @@ def run(
     inputs = load_inputs(config.input_dir, config.jd_path)
     check_backend(config.pdf_backend)  # fail fast before any LLM calls
     _check_cancel(cancel)
-    slug = _with_retry("job slug", lambda: _job_slug(config.model, inputs.job_description, config.name), progress)
+    slug = _with_retry(
+        "job slug", lambda: _job_slug(config.model, inputs.job_description, config.name), progress, cancel
+    )
     out_dir = make_output_dir(config.output_dir, slug)
 
     progress(f"[jobme] Job: {slug}")
@@ -352,7 +361,7 @@ def run(
     _check_cancel(cancel)
     progress("[jobme] Tailoring resume (accuracy & intrigue review)...")
     resume_content, resume_loop = _with_retry(
-        "tailoring resume", lambda: _tailor_resume(config.model, inputs), progress
+        "tailoring resume", lambda: _tailor_resume(config.model, inputs), progress, cancel
     )
     (out_dir / "resume_content.md").write_text(resume_content, encoding="utf-8")
 
@@ -364,12 +373,13 @@ def run(
             config.model, inputs, resume_content, out_dir, config.pdf_backend, progress=progress, cancel=cancel
         ),
         progress,
+        cancel,
     )
 
     _check_cancel(cancel)
     progress("[jobme] Writing cover letter (accuracy & intrigue review)...")
     cover_content, cover_loop = _with_retry(
-        "writing cover letter", lambda: _tailor_cover(config.model, inputs), progress
+        "writing cover letter", lambda: _tailor_cover(config.model, inputs), progress, cancel
     )
     (out_dir / "cover_letter.txt").write_text(cover_content, encoding="utf-8")
 
@@ -379,6 +389,7 @@ def run(
         "rendering cover letter",
         lambda: _render_cover(config.model, inputs, cover_content, out_dir, config.pdf_backend),
         progress,
+        cancel,
     )
 
     artifacts = [resume_html, resume_pdf, cover_html, cover_pdf]
