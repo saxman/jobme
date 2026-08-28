@@ -9,7 +9,9 @@ Two things about the shape are worth knowing before changing it.
 
 ``jobme/pdf.py`` uses Playwright's **sync** API, which raises when a loop is running in the calling
 thread. That is why a run goes to ``asyncio.to_thread`` and why it can never be moved onto the event
-loop, however tempting a direct ``await`` looks.
+loop, however tempting a direct ``await`` looks. ``asyncio.run`` joins the default executor before it
+closes the loop, so shutting the host down mid-run blocks until the worker reaches its next
+cancellation checkpoint, which can be as long as a full model call.
 
 Unlike ``jobme.cli``, this module does not walk parent directories for ``.env`` files. That is
 cwd-dependent behavior belonging to a command line; under Kokua the API key comes from the process
@@ -94,17 +96,20 @@ def _discard(done) -> None:
         done.exception()
 
 
-def _channel_progress(notify, loop) -> Callable[[str], None]:
+def _channel_progress(notify, loop, cancel: threading.Event) -> Callable[[str], None]:
     """Turn the pipeline thread's progress lines into channel messages, without blocking it.
 
     Fire and forget on purpose: the thread must not wait on a socket, and a lost progress line is
     not worth failing a run over. Degrades to a no-op when there is no channel, which is the case
-    for a spawned worker.
+    for a spawned worker. Muted once ``cancel`` is set, so a run winding down after a stopped turn
+    stops narrating steps nobody is left waiting to read.
     """
     if notify is None:
         return lambda line: None
 
     def send(line: str) -> None:
+        if cancel.is_set():
+            return
         future = asyncio.run_coroutine_threadsafe(notify(line), loop)
         future.add_done_callback(_discard)
 
@@ -131,9 +136,10 @@ def _publish(result: dict, downloads: Path) -> list[tuple[str, Path, str]]:
 def _run_pipeline(run_config: Config, progress: Callable[[str], None], cancel: threading.Event) -> Optional[dict]:
     """Run the pipeline on a worker thread, answering None for a cancelled run.
 
-    The cancellation is absorbed here rather than raised out of the thread because the awaiting task
-    is usually gone by then, and an exception set on a future nobody retrieves is logged as a warning
-    that describes the wrong problem.
+    Absorbed here rather than left to propagate: the worker thread cannot be interrupted mid-step, so
+    ``RunCancelled`` can still surface after the awaiting task itself is no longer cancelled. Left to
+    propagate, it would fall into the broad exception handler around the ``asyncio.to_thread`` call and
+    be reported to the user as a failure rather than as a cancellation.
     """
     try:
         return pipeline.run(run_config, progress=progress, cancel=cancel)
@@ -188,7 +194,7 @@ def build(ctx: ToolsetContext) -> list:
             )
 
         settings.output_dir.mkdir(parents=True, exist_ok=True)
-        jd_path = settings.output_dir / f"posting-{datetime.now():%Y%m%d-%H%M%S}.txt"
+        jd_path = settings.output_dir / f"posting-{datetime.now():%Y%m%d-%H%M%S-%f}.txt"
         jd_path.write_text(posting, encoding="utf-8")
 
         run_config = Config(
@@ -200,7 +206,7 @@ def build(ctx: ToolsetContext) -> list:
             name=name or None,
         )
         cancel = threading.Event()
-        progress = _channel_progress(ctx.state.notify, asyncio.get_running_loop())
+        progress = _channel_progress(ctx.state.notify, asyncio.get_running_loop(), cancel)
 
         try:
             result = await asyncio.to_thread(_run_pipeline, run_config, progress, cancel)

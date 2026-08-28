@@ -6,6 +6,8 @@ launches a browser, or touches the network.
 
 from __future__ import annotations
 
+import asyncio
+import threading
 from importlib.metadata import entry_points
 from pathlib import Path
 
@@ -64,10 +66,6 @@ def test_an_empty_model_falls_through_to_jobmes_own_default(tmp_path, monkeypatc
     monkeypatch.delenv("JOBME_MODEL", raising=False)
 
     assert resolve_settings(_config(tmp_path)).model == DEFAULT_MODEL
-
-
-def test_the_setup_check_is_offered_even_with_nothing_set_up(tmp_path):
-    assert "check_application_setup" in _tools(_config(tmp_path))
 
 
 async def test_check_reports_each_missing_input(tmp_path, monkeypatch):
@@ -130,10 +128,21 @@ def test_both_tools_are_offered_even_with_nothing_set_up(tmp_path):
     assert set(_tools(_config(tmp_path))) == {"tailor_application", "check_application_setup"}
 
 
-def _fake_run(tmp_path: Path, warnings=(), lines=("[jobme] Job: acme-engineer",)):
-    """Stand in for pipeline.run: emits progress, writes the artifacts, returns the real shape."""
+def _fake_run(posting="We are hiring an engineer.", warnings=(), lines=("[jobme] Job: acme-engineer",)):
+    """Stand in for pipeline.run: emits progress, writes the artifacts, returns the real shape.
+
+    Also pins the three properties a wrong implementation could silently drop: the run happens off
+    the event loop thread (Playwright's sync API demands it), the posting text the tool was given is
+    what actually reaches the pipeline (through ``config.jd_path``), and an empty ``name`` argument
+    resolves to ``None`` rather than an empty string.
+    """
 
     def run(config, *, progress, cancel):
+        assert threading.current_thread() is not threading.main_thread(), (
+            "the pipeline must run off the event loop thread"
+        )
+        assert config.jd_path.read_text(encoding="utf-8") == posting
+        assert config.name is None
         out_dir = config.output_dir / "20260828-120000_acme-engineer"
         out_dir.mkdir(parents=True, exist_ok=True)
         for line in lines:
@@ -160,7 +169,7 @@ def _fake_run(tmp_path: Path, warnings=(), lines=("[jobme] Job: acme-engineer",)
 async def test_tailor_application_publishes_both_pdfs_to_the_downloads_folder(tmp_path, monkeypatch):
     config = _config(tmp_path)
     _seed_inputs(resolve_settings(config).input_dir)
-    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run(tmp_path))
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run())
 
     report = await _tools(config)["tailor_application"]("We are hiring an engineer.")
 
@@ -176,7 +185,7 @@ async def test_tailor_application_publishes_both_pdfs_to_the_downloads_folder(tm
 async def test_tailor_application_streams_progress_to_the_channel(tmp_path, monkeypatch):
     config = _config(tmp_path)
     _seed_inputs(resolve_settings(config).input_dir)
-    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run(tmp_path, lines=("[jobme] Job: acme",)))
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run(lines=("[jobme] Job: acme",)))
     sent: list[str] = []
 
     async def notify(text: str) -> None:
@@ -190,7 +199,7 @@ async def test_tailor_application_streams_progress_to_the_channel(tmp_path, monk
 async def test_tailor_application_works_without_a_channel(tmp_path, monkeypatch):
     config = _config(tmp_path)
     _seed_inputs(resolve_settings(config).input_dir)
-    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run(tmp_path))
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run())
 
     report = await _tools(config, notify=None)["tailor_application"]("We are hiring an engineer.")
 
@@ -201,7 +210,7 @@ async def test_tailor_application_surfaces_warnings_in_its_result(tmp_path, monk
     config = _config(tmp_path)
     _seed_inputs(resolve_settings(config).input_dir)
     monkeypatch.setattr(
-        kokua_toolset.pipeline, "run", _fake_run(tmp_path, warnings=["the CV may lack enough content"])
+        kokua_toolset.pipeline, "run", _fake_run(warnings=["the CV may lack enough content"])
     )
 
     report = await _tools(config)["tailor_application"]("We are hiring an engineer.")
@@ -239,7 +248,10 @@ async def test_a_cancelled_run_reports_rather_than_raises(tmp_path, monkeypatch)
     _seed_inputs(resolve_settings(config).input_dir)
     monkeypatch.setattr(kokua_toolset.pipeline, "run", cancelled)
 
-    assert "cancelled" in (await _tools(config)["tailor_application"]("We are hiring.")).lower()
+    report = await _tools(config)["tailor_application"]("We are hiring.")
+
+    assert report == "The application run was cancelled before it finished."
+    assert "failed" not in report
 
 
 async def test_a_failed_run_reports_the_reason(tmp_path, monkeypatch):
@@ -253,3 +265,22 @@ async def test_a_failed_run_reports_the_reason(tmp_path, monkeypatch):
     report = await _tools(config)["tailor_application"]("We are hiring.")
 
     assert "cv.md" in report and "empty" in report
+
+
+async def test_channel_progress_mutes_after_cancellation():
+    sent: list[str] = []
+    delivered = asyncio.Event()
+
+    async def notify(text: str) -> None:
+        sent.append(text)
+        delivered.set()
+
+    cancel = threading.Event()
+    send = kokua_toolset._channel_progress(notify, asyncio.get_running_loop(), cancel)
+
+    send("before cancellation")
+    await delivered.wait()  # run_coroutine_threadsafe needs the loop to actually schedule it
+    cancel.set()
+    send("after cancellation")
+
+    assert sent == ["before cancellation"]
