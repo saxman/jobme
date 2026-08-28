@@ -287,7 +287,7 @@ async def test_channel_progress_mutes_after_cancellation():
     # If the mute were absent, "after cancellation" would reach notify on the same schedule the
     # first line just proved out, so this window is long enough to catch a genuine delivery.
     try:
-        await asyncio.wait_for(delivered.wait(), timeout=0.05)
+        await asyncio.wait_for(delivered.wait(), timeout=0.5)
     except asyncio.TimeoutError:
         pass
 

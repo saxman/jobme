@@ -136,15 +136,14 @@ def _publish(result: dict, downloads: Path) -> list[tuple[str, Path, str]]:
 def _run_pipeline(run_config: Config, progress: Callable[[str], None], cancel: threading.Event) -> Optional[dict]:
     """Run the pipeline on a worker thread, answering None for a cancelled run.
 
-    ``RunCancelled`` is absorbed here so a cancelled run is reported as a cancellation rather than
-    as a failure, but that only matters on one of the two paths that set ``cancel``. When ``cancel``
-    is set without cancelling the awaiting task, which is the path
-    ``test_a_cancelled_run_reports_rather_than_raises`` exercises, absorbing it here is what keeps
-    the broad ``except (FileNotFoundError, ValueError, RuntimeError)`` handler from reporting a
-    deliberate cancellation as a failure, since ``RunCancelled`` is a ``RuntimeError``. When the
-    await itself was cancelled instead, asyncio discards this thread's return value, and any
-    exception it raised, without ever inspecting either, so absorbing ``RunCancelled`` changes
-    nothing observable on that path.
+    Absorbing the cancellation here, rather than letting it propagate, is what keeps a deliberate
+    stop from being reported as a failure: ``RunCancelled`` is a ``RuntimeError``, so the broad
+    handler in ``tailor_application`` would otherwise catch it and answer "The application run
+    failed". That matters whenever ``RunCancelled`` surfaces while the awaiting task is still
+    alive, which is the case the suite covers by raising it straight out of a stubbed
+    ``pipeline.run``. It does not matter on the path this tool actually sets ``cancel`` on, since
+    that path has already cancelled the await and asyncio discards a cancelled future's outcome
+    without inspecting it; the return value never reaches anyone.
     """
     try:
         return pipeline.run(run_config, progress=progress, cancel=cancel)
