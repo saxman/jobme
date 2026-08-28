@@ -18,9 +18,13 @@ uv run playwright install chromium   # one-time, for the default PDF backend
 uv run scripts/jobme.py --jd path/to/posting.txt [--input-dir DIR --output-dir DIR]
 ```
 
-The test suite is mock-only (`uv run pytest`): no model, no network, no keys. It covers the
-callback, warning, and cancellation plumbing and the Kokua adapter, not the pipeline's output.
-Verify a pipeline change by running it end-to-end.
+The test suite is mock-only: no model, no network, no keys. Plain `uv sync && uv run pytest` only
+installs the `dev` dependency group, not the `kokua` extra, so `tests/test_kokua_toolset.py`'s
+`pytest.importorskip("kokua")` skips at collection time and the run reports `8 passed, 1 skipped`
+instead of `30 passed`; that one line hides all 22 Kokua adapter tests, not one, since pytest
+collapses a module-level skip into a single item. Run `uv sync --all-extras` (or `--extra kokua`)
+first for the full suite, and check for the word `skipped` in pytest's summary line rather than
+trusting the count next to it. Verify a pipeline change by running it end-to-end.
 To avoid API cost/keys during development, run against a local model:
 `--model ollama:qwen3:8b` (any installed Ollama model). The default model is
 `anthropic:claude-opus-4-8`, which needs `ANTHROPIC_API_KEY` (env or `.env`).

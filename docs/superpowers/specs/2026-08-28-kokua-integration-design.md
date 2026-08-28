@@ -70,9 +70,12 @@ jobme` once published) and Kokua discovers the toolset through the entry point. 
 recommended form: it edits the user's own Kokua checkout's `pyproject.toml` to record jobme as a
 dependency, which can conflict on a later `git pull` in Kokua, but it is what survives a plain
 `uv sync`, the first command in Kokua's own setup, since `uv sync` performs an exact sync that
-removes any installed package not declared as a dependency (`uv help sync`). The alternative,
-`uv pip install --editable ../jobme`, leaves `pyproject.toml` untouched but does not survive the
-next plain `uv sync` (`uv sync --inexact` keeps it instead). Neither form makes Kokua-the-project
+removes any installed package not declared as a dependency (`uv help sync`). `uv add` also adds a
+`[tool.uv.sources]` entry for jobme and rewrites `uv.lock`, so afterward Kokua must be synced with
+plain `uv sync --all-extras`, not the `--no-sources` form its README leads with, or the path source
+is ignored and jobme fails to resolve. The alternative, `uv pip install --editable ../jobme`,
+leaves `pyproject.toml` untouched but does not survive the next plain `uv sync` (`uv sync
+--inexact` keeps it instead). Neither form makes Kokua-the-project
 depend on jobme: the plugin still arrives purely through the entry point, which is what "Kokua
 declares nothing" means. The agent holds it once `[agents.assistant].tools` names `jobme`, per
 Kokua's rule that a capability is declared and never defaulted.

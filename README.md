@@ -211,7 +211,12 @@ changes.
      that removes any installed package not declared as a dependency (see `uv help sync`), and
      `uv sync` is the first command in Kokua's own setup and what you run after every pull. This
      does not make Kokua-the-project depend on jobme; the plugin still arrives purely through the
-     entry point, which is what "nothing in Kokua changes" above means.
+     entry point, which is what "nothing in Kokua changes" above means. One more consequence:
+     `uv add` also adds a `[tool.uv.sources]` path entry for jobme and rewrites Kokua's `uv.lock`
+     alongside its `pyproject.toml`, so a later `git pull` there can conflict on two files instead
+     of one. From then on, sync Kokua's environment with plain `uv sync --all-extras`, not
+     `uv sync --no-sources`: `--no-sources` ignores that path entry (`uv help sync`), so jobme
+     resolves from PyPI instead, where it doesn't exist, and the sync fails outright.
    - **`uv pip install --editable ../jobme`** leaves Kokua's `pyproject.toml` untouched, but the
      next plain `uv sync` in that checkout silently removes jobme again, and Kokua's next start
      fails with `agent 'assistant' declares unknown toolset 'jobme'`, an error that says nothing
