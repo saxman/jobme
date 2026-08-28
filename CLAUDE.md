@@ -5,7 +5,7 @@ Guidance for working in this repo. See [README.md](README.md) for end-user docs.
 ## What this is
 
 `jobme` tailors a resume and cover letter to a job posting and produces send-ready PDFs.
-It's a multi-step agentic pipeline built on **AIMU** (`aimu` on PyPI, >=0.7.0), which wraps
+It's a multi-step agentic pipeline built on **AIMU** (`aimu` on PyPI, >=0.25.0), which wraps
 the LLM providers. Python >=3.11, managed with **uv**.
 
 ## Commands
