@@ -22,6 +22,20 @@ dev = [
     "pytest",
     "pytest-asyncio",
 ]
+# The Kokua adapter's tests import Kokua. Kokua is not on PyPI, so this extra is only
+# installable from a sibling checkout; see [tool.uv.sources] below. jobme itself never
+# depends on Kokua, and the pipeline runs with it absent.
+kokua = [
+    "kokua",
+]
+
+[tool.uv.sources]
+kokua = { path = "../kokua", editable = true }
+
+# Kokua discovers a toolset through this group, with no change to its own package. The key is
+# the name an agent declares in [agents.<name>].tools, and it must equal TOOLSET.name.
+[project.entry-points."kokua.toolsets"]
+jobme = "jobme.kokua_toolset:TOOLSET"
 
 [build-system]
 requires = ["setuptools"]
