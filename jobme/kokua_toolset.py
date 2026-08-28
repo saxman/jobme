@@ -84,6 +84,80 @@ def _missing_api_key(model: str) -> Optional[str]:
     return variable if variable and not os.environ.get(variable) else None
 
 
+def _discard(done) -> None:
+    """Consume a progress send's outcome.
+
+    Without this a channel that dropped a line surfaces later as asyncio's "exception was never
+    retrieved" warning, which says nothing useful about a run that otherwise succeeded.
+    """
+    if not done.cancelled():
+        done.exception()
+
+
+def _channel_progress(notify, loop) -> Callable[[str], None]:
+    """Turn the pipeline thread's progress lines into channel messages, without blocking it.
+
+    Fire and forget on purpose: the thread must not wait on a socket, and a lost progress line is
+    not worth failing a run over. Degrades to a no-op when there is no channel, which is the case
+    for a spawned worker.
+    """
+    if notify is None:
+        return lambda line: None
+
+    def send(line: str) -> None:
+        future = asyncio.run_coroutine_threadsafe(notify(line), loop)
+        future.add_done_callback(_discard)
+
+    return send
+
+
+def _publish(result: dict, downloads: Path) -> list[tuple[str, Path, str]]:
+    """Copy the finished PDFs where the web front end serves them, prefixed by the run's folder name.
+
+    That folder is already timestamped and slugged, and the downloads folder is flat and served by
+    basename, so the prefix is what keeps two applications from both claiming resume.pdf.
+    """
+    downloads.mkdir(parents=True, exist_ok=True)
+    prefix = slugify(Path(result["output_dir"]).name)
+    published = []
+    for label, key in (("Resume", "resume_pdf"), ("Cover letter", "cover_pdf")):
+        source = Path(result[key])
+        target = downloads / f"{prefix}_{source.name}"
+        shutil.copy2(source, target)
+        published.append((label, target, f"/download/{target.name}"))
+    return published
+
+
+def _run_pipeline(run_config: Config, progress: Callable[[str], None], cancel: threading.Event) -> Optional[dict]:
+    """Run the pipeline on a worker thread, answering None for a cancelled run.
+
+    The cancellation is absorbed here rather than raised out of the thread because the awaiting task
+    is usually gone by then, and an exception set on a future nobody retrieves is logged as a warning
+    that describes the wrong problem.
+    """
+    try:
+        return pipeline.run(run_config, progress=progress, cancel=cancel)
+    except pipeline.RunCancelled:
+        return None
+
+
+def _format_result(result: dict, downloads: Path) -> str:
+    """The whole outcome in one tool result: where it went, how it fits, and every warning.
+
+    Both a filesystem path and a /download link are given for each PDF. The link only resolves in
+    the web front end, and a toolset has no way to ask which front end is attached.
+    """
+    fill = result["resume_fill"]
+    lines = [
+        f"Tailored application written to {result['output_dir']}.",
+        f"Resume: {result['resume_pages']} page(s)" + (f", fill ~{fill:.2f}." if fill is not None else "."),
+    ]
+    for label, path, link in _publish(result, downloads):
+        lines.append(f"{label}: {path} (web UI: {link})")
+    lines += [f"Warning: {warning}." for warning in result.get("warnings", [])]
+    return "\n".join(lines)
+
+
 def build(ctx: ToolsetContext) -> list:
     """Both tools, always.
 
@@ -92,6 +166,55 @@ def build(ctx: ToolsetContext) -> list:
     inputs are absent would remove the thing that explains the absence.
     """
     config = ctx.config
+
+    @tool
+    async def tailor_application(job_description: str, name: str = "") -> str:
+        """Tailor the user's resume and cover letter to a job posting and produce PDFs.
+
+        Pass the posting's full text, not a summary or a URL: the whole pipeline is grounded in the
+        text it is given. `name` is an optional "Company - Title" label for the output folder. This
+        takes several minutes and costs real money, so confirm with the user before calling it.
+        """
+        settings = resolve_settings(config)
+        posting = job_description.strip()
+        if not posting:
+            return "No job posting text was supplied. Pass the posting's full text as job_description."
+
+        missing = [name_ for name_ in REQUIRED_INPUTS if not (settings.input_dir / name_).is_file()]
+        if missing:
+            return (
+                f"Cannot tailor an application: {', '.join(missing)} not found in {settings.input_dir}. "
+                "Call check_application_setup for the full picture."
+            )
+
+        settings.output_dir.mkdir(parents=True, exist_ok=True)
+        jd_path = settings.output_dir / f"posting-{datetime.now():%Y%m%d-%H%M%S}.txt"
+        jd_path.write_text(posting, encoding="utf-8")
+
+        run_config = Config(
+            jd_path=jd_path,
+            input_dir=settings.input_dir,
+            output_dir=settings.output_dir,
+            model=settings.model,
+            pdf_backend=settings.pdf_backend,
+            name=name or None,
+        )
+        cancel = threading.Event()
+        progress = _channel_progress(ctx.state.notify, asyncio.get_running_loop())
+
+        try:
+            result = await asyncio.to_thread(_run_pipeline, run_config, progress, cancel)
+        except asyncio.CancelledError:
+            # A stopped turn cannot interrupt the thread, so ask the run to stop at its next step
+            # boundary. Without this it keeps spending on model calls nobody is waiting for.
+            cancel.set()
+            raise
+        except (FileNotFoundError, ValueError, RuntimeError) as error:
+            return f"The application run failed: {error}."
+
+        if result is None:
+            return "The application run was cancelled before it finished."
+        return _format_result(result, config.downloads_path)
 
     @tool
     async def check_application_setup() -> str:
@@ -128,7 +251,7 @@ def build(ctx: ToolsetContext) -> list:
 
         return "\n".join(lines)
 
-    return [check_application_setup]
+    return [tailor_application, check_application_setup]
 
 
 GUIDANCE = (

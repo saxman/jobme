@@ -124,3 +124,132 @@ def test_every_declared_setting_has_a_section_key():
         "model",
         "pdf_backend",
     }
+
+
+def test_both_tools_are_offered_even_with_nothing_set_up(tmp_path):
+    assert set(_tools(_config(tmp_path))) == {"tailor_application", "check_application_setup"}
+
+
+def _fake_run(tmp_path: Path, warnings=(), lines=("[jobme] Job: acme-engineer",)):
+    """Stand in for pipeline.run: emits progress, writes the artifacts, returns the real shape."""
+
+    def run(config, *, progress, cancel):
+        out_dir = config.output_dir / "20260828-120000_acme-engineer"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for line in lines:
+            progress(line)
+        resume_pdf = out_dir / "resume.pdf"
+        cover_pdf = out_dir / "cover_letter.pdf"
+        resume_pdf.write_bytes(b"%PDF-resume")
+        cover_pdf.write_bytes(b"%PDF-cover")
+        return {
+            "output_dir": out_dir,
+            "resume_html": out_dir / "resume.html",
+            "resume_pdf": resume_pdf,
+            "cover_html": out_dir / "cover_letter.html",
+            "cover_pdf": cover_pdf,
+            "resume_pages": 2,
+            "resume_fill": 1.31,
+            "summary": out_dir / "summary.md",
+            "warnings": list(warnings),
+        }
+
+    return run
+
+
+async def test_tailor_application_publishes_both_pdfs_to_the_downloads_folder(tmp_path, monkeypatch):
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run(tmp_path))
+
+    report = await _tools(config)["tailor_application"]("We are hiring an engineer.")
+
+    published = sorted(path.name for path in config.downloads_path.iterdir())
+    assert published == [
+        "20260828-120000-acme-engineer_cover_letter.pdf",
+        "20260828-120000-acme-engineer_resume.pdf",
+    ]
+    assert "/download/20260828-120000-acme-engineer_resume.pdf" in report
+    assert "2 page" in report
+
+
+async def test_tailor_application_streams_progress_to_the_channel(tmp_path, monkeypatch):
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run(tmp_path, lines=("[jobme] Job: acme",)))
+    sent: list[str] = []
+
+    async def notify(text: str) -> None:
+        sent.append(text)
+
+    await _tools(config, notify=notify)["tailor_application"]("We are hiring an engineer.")
+
+    assert sent == ["[jobme] Job: acme"]
+
+
+async def test_tailor_application_works_without_a_channel(tmp_path, monkeypatch):
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", _fake_run(tmp_path))
+
+    report = await _tools(config, notify=None)["tailor_application"]("We are hiring an engineer.")
+
+    assert "/download/" in report
+
+
+async def test_tailor_application_surfaces_warnings_in_its_result(tmp_path, monkeypatch):
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(
+        kokua_toolset.pipeline, "run", _fake_run(tmp_path, warnings=["the CV may lack enough content"])
+    )
+
+    report = await _tools(config)["tailor_application"]("We are hiring an engineer.")
+
+    assert "the CV may lack enough content" in report
+
+
+async def test_tailor_application_refuses_without_a_cv(tmp_path, monkeypatch):
+    def explode(config, *, progress, cancel):
+        raise AssertionError("the pipeline must not start without the required inputs")
+
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", explode)
+
+    report = await _tools(_config(tmp_path))["tailor_application"]("We are hiring an engineer.")
+
+    assert "cv.md" in report and "check_application_setup" in report
+
+
+async def test_tailor_application_refuses_an_empty_posting(tmp_path, monkeypatch):
+    def explode(config, *, progress, cancel):
+        raise AssertionError("the pipeline must not start without a posting")
+
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", explode)
+
+    assert "posting" in await _tools(config)["tailor_application"]("   ")
+
+
+async def test_a_cancelled_run_reports_rather_than_raises(tmp_path, monkeypatch):
+    def cancelled(config, *, progress, cancel):
+        raise kokua_toolset.pipeline.RunCancelled("cancelled before the next step")
+
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", cancelled)
+
+    assert "cancelled" in (await _tools(config)["tailor_application"]("We are hiring.")).lower()
+
+
+async def test_a_failed_run_reports_the_reason(tmp_path, monkeypatch):
+    def fail(config, *, progress, cancel):
+        raise ValueError("CV markdown (input/cv.md) is empty")
+
+    config = _config(tmp_path)
+    _seed_inputs(resolve_settings(config).input_dir)
+    monkeypatch.setattr(kokua_toolset.pipeline, "run", fail)
+
+    report = await _tools(config)["tailor_application"]("We are hiring.")
+
+    assert "cv.md" in report and "empty" in report
