@@ -9,7 +9,7 @@ resolution-markers = [
 
 [[package]]
 name = "aimu"
-version = "0.25.0"
+version = "0.26.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastmcp" },
@@ -19,9 +19,9 @@ dependencies = [
     { name = "tinydb" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ba/24/d19556ac5330dd233309b07415a0f342af3a4b8f1f7148c904c71eb6915b/aimu-0.25.0.tar.gz", hash = "sha256:3ac81f08d406cf9157771c97c54e035968c1c5152ffa9fd69119cd6c7f309023", size = 697448, upload-time = "2026-08-26T21:49:03.155Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/41/ef/afb6a098f22e8c7f79bf42cc662b025f43883dcdc58fd5b753c17f86f329/aimu-0.26.0.tar.gz", hash = "sha256:310f0cc0abd961964d57174931d4bdcb1f0c44a48b913d5a3e337382c116992d", size = 715742, upload-time = "2026-08-28T19:39:47.042Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/b9/00cf435c9a2cf443cc21c2d75ec5a7e79915a67555343fcdfe490d22ceb1/aimu-0.25.0-py3-none-any.whl", hash = "sha256:453c6ab2cf27b9158ecb5828d4de7d3796cf0d1c9550d697bd8fc30c47e270a5", size = 488597, upload-time = "2026-08-26T21:49:01.341Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/17/15ca51bcd963ce2ce95b9507bf0c74aa12c543d7e0220c15a8470e10be90/aimu-0.26.0-py3-none-any.whl", hash = "sha256:0c3fc5b36c154609042aafb26e9087233a38dfa19387fc06ab1c75cccc99f498", size = 495634, upload-time = "2026-08-28T19:39:45.509Z" },
 ]
 
 [package.optional-dependencies]
@@ -906,8 +906,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aimu", extras = ["anthropic", "ollama"], specifier = ">=0.25.0" },
-    { name = "anthropic", specifier = ">=0.108.0" },
+    { name = "aimu", extras = ["anthropic", "ollama"], specifier = ">=0.26.0" },
+    { name = "anthropic" },
     { name = "playwright" },
     { name = "pypdf" },
     { name = "python-dotenv" },
