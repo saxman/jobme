@@ -40,12 +40,12 @@ Both come from the projects as they stand, and neither is negotiable in this wor
 jobme repo:
 
 ```
-jobme/kokua.py            # TOOLSET, the two tools, settings, guidance
+jobme/kokua_toolset.py            # TOOLSET, the two tools, settings, guidance
 jobme/skill/SKILL.md      # the job-application procedure (content, not code)
 tests/test_kokua.py       # mock-only adapter tests (jobme's first tests)
 pyproject.toml            # the kokua.toolsets entry point
 README.md                 # a "Use from Kokua" section
-CLAUDE.md                 # the rule that jobme/kokua.py is the only Kokua-aware module
+CLAUDE.md                 # the rule that jobme/kokua_toolset.py is the only Kokua-aware module
 ```
 
 Kokua repo: documentation only. A `docs/how-to/` page on installing a third-party toolset, using
@@ -54,7 +54,10 @@ change, no test change.
 
 ### The dependency direction
 
-`jobme/kokua.py` is the only module that imports from `kokua`, and jobme does not depend on Kokua.
+`jobme/kokua_toolset.py` is the only module that imports from `kokua`, and jobme does not depend on Kokua.
+The module is named `kokua_toolset` rather than `kokua` so that `from kokua.registry import Toolset`
+inside it does not read as a self-import (Python 3's absolute imports resolve it correctly either way,
+but a reader has to know that to be sure).
 An entry point is inert unless something loads its group, so `pip install jobme` stays exactly as
 heavy as it is today and jobme's CLI keeps working with Kokua absent. The adapter imports
 `kokua.registry` at module scope (it must, to build the `Toolset`), which is safe because nothing
@@ -104,7 +107,7 @@ adapter's module docstring.
 
 ## The toolset
 
-`jobme/kokua.py` exports a module-level `TOOLSET` named `jobme`, `cross_cutting=False` (jobme is
+`jobme/kokua_toolset.py` exports a module-level `TOOLSET` named `jobme`, `cross_cutting=False` (jobme is
 domain work, so an agent holding it should read as tool-heavy to Kokua's delegation guidance).
 
 ### Settings
