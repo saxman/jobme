@@ -5,12 +5,8 @@ description = "Generative AI for effective job hunting: agentically tailor a res
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "aimu[anthropic,ollama]>=0.25.0",
-    # aimu 0.25.0 declares anthropic>=0.50.0, but its Anthropic client catches
-    # anthropic.RequestTooLargeError, which only exists from 0.108.0. On an older SDK that
-    # except clause raises AttributeError and destroys the real API error, so every
-    # transient failure escapes the retry logic in jobme.pipeline._with_retry.
-    "anthropic>=0.108.0",
+    "aimu[anthropic,ollama]>=0.26.0",
+    "anthropic",
     "playwright",
     "weasyprint",
     "pypdf",
