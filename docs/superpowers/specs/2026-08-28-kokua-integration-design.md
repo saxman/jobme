@@ -65,10 +65,13 @@ imports `jobme.kokua` unless Kokua's plugin loader does.
 
 ### Installation
 
-The user installs jobme into Kokua's environment (`uv add --editable ../jobme`, or
-`pip install jobme`) and Kokua discovers the toolset through the entry point. The agent holds it
-once `[agents.assistant].tools` names `jobme`, per Kokua's rule that a capability is declared and
-never defaulted.
+The user installs jobme into Kokua's environment (`uv pip install --editable ../jobme`, or
+`pip install jobme` once published) and Kokua discovers the toolset through the entry point.
+`uv pip install` is the recommended form because it leaves Kokua's `pyproject.toml` untouched, which
+is the point of this design; `uv add --editable ../jobme` also works but records jobme as a
+dependency of the user's own checkout, which can conflict on a later `git pull` in Kokua. The agent
+holds it once `[agents.assistant].tools` names `jobme`, per Kokua's rule that a capability is
+declared and never defaulted.
 
 The `aimu` floors are compatible: jobme requires `>=0.26.0`, Kokua requires `>=0.25.0`, and the
 sibling `../aimu` checkout both projects develop against is 0.26.0.

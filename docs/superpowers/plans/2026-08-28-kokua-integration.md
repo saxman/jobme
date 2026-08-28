@@ -1191,12 +1191,17 @@ jobme registers itself as a [Kokua](https://github.com/saxman/kokua) toolset, so
 tailor an application in conversation. Kokua discovers it through an entry point; nothing in Kokua
 changes.
 
-1. Install jobme into Kokua's environment:
+1. Install jobme into Kokua's environment. `uv pip install --editable` installs it without
+   touching Kokua's `pyproject.toml`, which matches "nothing in Kokua changes" above:
 
    ```bash
-   cd ../kokua && uv add --editable ../jobme
+   cd ../kokua && uv pip install --editable ../jobme
    uv run playwright install chromium   # once, for the default PDF backend
    ```
+
+   If you'd rather have jobme recorded as a dependency of your own Kokua checkout, `uv add
+   --editable ../jobme` does that, at the cost of a `pyproject.toml` edit that a later `git pull`
+   in Kokua can conflict with.
 
 2. Declare the toolset in `$KOKUA_HOME/config.toml`, and gate the expensive tool:
 
@@ -1297,7 +1302,11 @@ Match the heading style, front matter (if any), and changelog format you find. T
 Create `../kokua/docs/how-to/install-a-third-party-toolset.md`, at 120 columns, no em dashes, covering:
 
 - What an entry point is and why Kokua needs no change: a package publishing `[project.entry-points."kokua.toolsets"]` is discovered by `kokua.plugins.discover_toolsets` at startup, and the key it registers is the name an agent declares in `[agents.<name>].tools`.
-- Installing one: `uv add --editable ../jobme` inside Kokua's checkout, or `pip install <package>`.
+- Installing one: `uv pip install --editable ../jobme` inside Kokua's checkout (leaves
+  `pyproject.toml` untouched), or `pip install <package>` once published. Mention `uv add
+  --editable` as the alternative for a user who wants it recorded as a dependency of their own
+  checkout, and the tradeoff: it edits `pyproject.toml`, so a later `git pull` in Kokua can
+  conflict.
 - Declaring it: add the name to `[agents.assistant].tools`. A capability is declared, never defaulted, so installing alone grants nothing.
 - Its settings: a toolset owns a `[<name>]` section, seeded with the defaults it declares. Show jobme's four keys as the worked example.
 - Gating it: add an expensive or irreversible tool to `[security].confirm_tools`, and state the consequence that a gated tool auto-denies in a scheduled proactive turn.
@@ -1340,7 +1349,7 @@ cd ../jobme
 
 ```bash
 cd ../kokua
-uv add --editable ../jobme
+uv pip install --editable ../jobme
 uv run python -c "
 from kokua.plugins import discover_toolsets
 print(sorted(discover_toolsets()))

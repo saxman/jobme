@@ -203,12 +203,17 @@ jobme registers itself as a [Kokua](https://github.com/saxman/kokua) toolset, so
 tailor an application in conversation. Kokua discovers it through an entry point; nothing in Kokua
 changes.
 
-1. Install jobme into Kokua's environment:
+1. Install jobme into Kokua's environment. `uv pip install --editable` installs it without
+   touching Kokua's `pyproject.toml`, which matches "nothing in Kokua changes" above:
 
    ```bash
-   cd ../kokua && uv add --editable ../jobme
+   cd ../kokua && uv pip install --editable ../jobme
    uv run playwright install chromium   # once, for the default PDF backend
    ```
+
+   If you'd rather have jobme recorded as a dependency of your own Kokua checkout, `uv add
+   --editable ../jobme` does that, at the cost of a `pyproject.toml` edit that a later `git pull`
+   in Kokua can conflict with.
 
 2. Declare the toolset in `$KOKUA_HOME/config.toml`, and gate the expensive tool:
 
