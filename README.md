@@ -1,35 +1,35 @@
 # jobme
 
-Generative AI for effective job hunting.
+Tailored resumes and cover letters for effective job hunting.
 
-`jobme` is an [AIMU](https://pypi.org/project/aimu/)-powered, multi-step agentic pipeline that tailors your
-resume and cover letter to a specific job posting and produces send-ready PDFs. You point
+`jobme` is a multi-step pipeline, built on [AIMU](https://pypi.org/project/aimu/), that tailors
+your resume and cover letter to a specific job posting and produces send-ready PDFs. You point
 it at a job description; it rewrites your resume content to fit, reviews the result for
 accuracy and intrigue, renders a two-page printable resume in your own resume's style, and
-writes a cover letter in your voice — then exports both as PDFs.
+writes a cover letter in your voice, then exports both as PDFs.
 
 ## Features
 
 - **Tailors resume content** from a comprehensive markdown CV to a specific job description.
-- **Agentic review loop** (AIMU `EvaluatorOptimizer`) enforcing **accuracy** — no
-  fabrication; every claim must be traceable to your CV — and **intrigue** — compelling and
-  aligned to the posting.
+- **Automatic review loop** (AIMU `EvaluatorOptimizer`) enforcing **accuracy** (no
+  fabrication: every claim must be traceable to your CV) and **intrigue** (compelling and
+  aligned to the posting).
 - **Two-page printable HTML resume** rendered in the style/format of your existing HTML
   resume, with an automatic fit loop (renders, measures real page count and fill, then
   condenses, adds genuine CV detail, or adjusts typography to fill close to two pages).
 - **Cover letter in your own voice**, learned from optional sample letters, held to the same
   accuracy/intrigue bar.
 - **Send-ready PDFs** of both the resume and the cover letter.
-- **Configurable model backend** — Anthropic Claude by default, easily switched to a local
-  Ollama model — and a **pluggable PDF backend** (Playwright or WeasyPrint).
-- **Run summary** capturing the model used, files produced, page count, and the full agent
-  reasoning trace (`summary.md` + `trace.json`).
+- **Configurable model backend** (Anthropic Claude by default, easily switched to a local
+  Ollama model) and a **pluggable PDF backend** (Playwright or WeasyPrint).
+- **Run summary** capturing the model used, files produced, page count, and the full
+  generation and review transcript (`summary.md` + `trace.json`).
 
 ## Getting started
 
 Your CV and the materials jobme generates are personal, so the normal way to use it is from
 your **own private copy** that still pulls code updates from this project. (GitHub won't make
-a private fork of a public repo, and you can't fork a repo into the account that owns it — so
+a private fork of a public repo, and you can't fork a repo into the account that owns it, so
 this is a "private mirror," not the Fork button.)
 
 1. Create an empty **private** repo on GitHub, e.g. `you/jobme-private`.
@@ -44,7 +44,7 @@ this is a "private mirror," not the Fork button.)
    git push -u origin main                      # publish to YOUR repo and track it
    ```
 
-   `git status -sb` should now show `## main...origin/main` — i.e. your `main` tracks your
+   `git status -sb` should now show `## main...origin/main`, i.e. your `main` tracks your
    private repo, not the public one.
 
 3. Install dependencies:
@@ -70,8 +70,8 @@ this is a "private mirror," not the Fork button.)
    They're committed only here in your private mirror. See [Your inputs](#your-inputs) for
    what goes in `input/`.
 
-5. Set an API key for the default (cloud) model — or switch to a local model, see
-   [Configuration](#configuration):
+5. Set an API key for the default (cloud) model, or switch to a local model (see
+   [Configuration](#configuration)):
 
    ```
    # PowerShell
@@ -88,7 +88,7 @@ Save a job posting to a text file, then run it (once per posting):
 jobme --jd path/to/posting.txt
 ```
 
-Results are written to `output/<company-title>/` — committing them archives every run:
+Results are written to `output/<company-title>/`. Committing them archives every run:
 
 ```
 resume.html        resume.pdf         cover_letter.html   cover_letter.pdf
@@ -114,11 +114,11 @@ git push origin main
 
 ### Configuration
 
-- **Model** — `--model` or the `JOBME_MODEL` env var. Examples: `anthropic:claude-opus-4-8`
+- **Model:** `--model` or the `JOBME_MODEL` env var. Examples: `anthropic:claude-opus-4-8`
   (default, needs `ANTHROPIC_API_KEY`); `ollama:qwen3:8b` for a fully local run, no API key.
-- **PDF backend** — `--pdf-backend`. `playwright` (default) needs a one-time
+- **PDF backend:** `--pdf-backend`. `playwright` (default) needs a one-time
   `playwright install chromium`. `weasyprint` needs GTK native libraries (an extra install
-  on Windows — see the WeasyPrint docs).
+  on Windows; see the WeasyPrint docs).
 
 ## Your inputs
 
@@ -126,42 +126,42 @@ Put these in your `input/` folder:
 
 | File | Role | Required |
 |------|------|----------|
-| `cv.md` | **Content** source of truth — your full CV in markdown | yes |
-| `resume.html` | **Style/format** template — a complete styled resume | yes |
+| `cv.md` | **Content** source of truth: your full CV in markdown | yes |
+| `resume.html` | **Style/format** template: a complete styled resume | yes |
 | `cover_letter-1.txt`, `cover_letter-2.txt`, … | Writing-style samples (your voice) | optional |
 | `guidance.md` | Free-form writing/formatting guidance for the model | optional |
 
-**`cv.md` — your complete CV (the content).** jobme tailors each resume by *selecting and
+**`cv.md`, your complete CV (the content).** jobme tailors each resume by *selecting and
 rephrasing* from this file and **never invents anything that isn't in it**, so make it
 comprehensive: full work history with dates, titles, and measurable accomplishments, plus
 skills, education, projects, and certifications. Use clear markdown headings (e.g. Summary,
-Skills, Experience, Education). The richer it is, the better jobme can tailor — and since a
+Skills, Experience, Education). The richer it is, the better jobme can tailor, and since a
 resume can only be as full as the relevant material in your CV, a thin CV yields a short
 resume (jobme prints a warning when it can't fill two pages from what you provided).
 
-**`resume.html` — your style/format template (the look).** jobme reuses this file's CSS,
+**`resume.html`, your style/format template (the look).** jobme reuses this file's CSS,
 fonts, layout, and section structure, swapping in the tailored content. It should be:
-- a **complete, well-filled two-page resume**, not a stub — the renderer mimics its density
-  and structure, so a full example produces a full result and a sparse one produces a sparse
-  result;
+- a **complete, well-filled two-page resume**, not a stub, since the renderer mimics its
+  density and structure, so a full example produces a full result and a sparse one produces a
+  sparse result;
 - **self-contained**, with all styling in an inline `<style>` block;
 - **print-ready for US Letter**, with page-break rules that let sections *flow across the page
   boundary*: keep a heading with its section and a role with its bullets (`break-after: avoid`),
-  but don't wrap whole sections in `break-inside: avoid` — that strands large gaps and leaves
+  but don't wrap whole sections in `break-inside: avoid`, which strands large gaps and leaves
   the pages underfilled.
 
 **Cover-letter samples (optional).** One or more `.txt` files of letters you've written; jobme
 matches their tone and phrasing. Omit them and it writes in a neutral professional voice.
 
-**`guidance.md` (optional) — writing/formatting rules for the model.** Free-form instructions
-applied to every generation step (resume content, cover letter, and rendering) — for example
+**`guidance.md` (optional), writing/formatting rules for the model.** Free-form instructions
+applied to every generation step (resume content, cover letter, and rendering), for example
 "Don't use em dashes; use commas or parentheses", "Use British spelling", or "Keep bullets to
 one line". Accuracy always wins: guidance can shape wording and format but never licenses
 inventing anything that isn't in your `cv.md`.
 
 > The committed [`example/`](example/) folder holds **demo files** (`cv.md`, `resume.html`,
-> `cover_letter-1.txt`, `jd_sample.txt`) plus a sample run in [`example/output/`](example/output/)
-> — open them to see the expected format and output, but **don't put your real data there**.
+> `cover_letter-1.txt`, `jd_sample.txt`) plus a sample run in [`example/output/`](example/output/).
+> Open them to see the expected format and output, but **don't put your real data there**.
 > Your real CV and runs live in `input/` and `output/` in your **private mirror**, never in
 > this public checkout.
 
@@ -177,14 +177,14 @@ git push origin main
 ```
 
 > Always push with an explicit **`git push origin main`**, and only ever fetch from
-> **`upstream`** — that keeps your private materials out of the public project. Because this
+> **`upstream`**, which keeps your private materials out of the public project. Because this
 > public project commits nothing to `input/`/`output/`, your data there won't conflict on sync.
 
 ## Example output
 
 The committed [`example/`](example/) folder is a complete, self-contained demo: the synthetic
 inputs (Jane Q. Candidate / Atlas Freight) plus a sample run under
-[`example/output/`](example/output/) so you can see what jobme produces — the tailored
+[`example/output/`](example/output/) so you can see what jobme produces: the tailored
 resume and cover letter (HTML + PDF), the approved text, and the run `summary.md`/`trace.json`.
 
 To regenerate it yourself in a plain clone of this project:
