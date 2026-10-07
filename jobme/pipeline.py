@@ -349,6 +349,8 @@ def run(
     """
     inputs = load_inputs(config.input_dir, config.jd_path)
     check_backend(config.pdf_backend)  # fail fast before any LLM calls
+    # Before the first LLM call, which can block for a long time (e.g. Ollama pulling the model).
+    progress(f"[jobme] Model: {config.model} ({config.model_source.value}) | PDF backend: {config.pdf_backend}")
     _check_cancel(cancel)
     slug = _with_retry(
         "job slug", lambda: _job_slug(config.model, inputs.job_description, config.name), progress, cancel
@@ -356,7 +358,6 @@ def run(
     out_dir = make_output_dir(config.output_dir, slug)
 
     progress(f"[jobme] Job: {slug}")
-    progress(f"[jobme] Model: {config.model} | PDF backend: {config.pdf_backend}")
 
     _check_cancel(cancel)
     progress("[jobme] Tailoring resume (accuracy & intrigue review)...")

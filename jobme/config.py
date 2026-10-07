@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 DEFAULT_MODEL = "anthropic:claude-opus-4-8"
@@ -40,6 +41,14 @@ MAX_API_RETRIES = 3
 API_RETRY_BASE_DELAY = 2.0
 
 
+class ModelSource(Enum):
+    """Where the resolved model came from; the value is how it reads in the progress line."""
+
+    EXPLICIT = "set explicitly"
+    ENVIRONMENT = "set by JOBME_MODEL"
+    DEFAULT = "default"
+
+
 @dataclass
 class Config:
     """Resolved settings for a single tailoring run."""
@@ -50,8 +59,17 @@ class Config:
     model: str
     pdf_backend: str
     name: str | None = None  # optional explicit job slug/title
+    model_source: ModelSource = ModelSource.EXPLICIT
 
 
-def resolve_model(flag: str | None) -> str:
-    """Resolve the model string from flag -> JOBME_MODEL env -> default."""
-    return flag or os.environ.get("JOBME_MODEL") or DEFAULT_MODEL
+def resolve_model(explicit: str | None) -> tuple[str, ModelSource]:
+    """Resolve the model string from explicit value -> JOBME_MODEL env -> default.
+
+    ``explicit`` is the CLI's ``--model`` or Kokua's ``[jobme].model``.
+    """
+    if explicit:
+        return explicit, ModelSource.EXPLICIT
+    environment = os.environ.get("JOBME_MODEL")
+    if environment:
+        return environment, ModelSource.ENVIRONMENT
+    return DEFAULT_MODEL, ModelSource.DEFAULT

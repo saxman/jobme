@@ -60,13 +60,15 @@ def main(argv: list[str] | None = None) -> int:
     _load_env()  # pick up ANTHROPIC_API_KEY / JOBME_MODEL from .env files, parents included
     args = _build_parser().parse_args(argv)
 
+    model, model_source = resolve_model(args.model)
     config = Config(
         jd_path=args.jd,
         input_dir=args.input_dir,
         output_dir=args.output_dir,
-        model=resolve_model(args.model),
+        model=model,
         pdf_backend=args.pdf_backend,
         name=args.name,
+        model_source=model_source,
     )
 
     try:

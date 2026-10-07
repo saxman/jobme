@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from jobme import pipeline
-from jobme.config import Config
+from jobme.config import Config, ModelSource
 from jobme.io_utils import Inputs
 
 
@@ -65,6 +65,26 @@ def test_run_reports_progress_through_the_callback_instead_of_printing(monkeypat
 
     assert any("acme-engineer" in line for line in lines)
     assert capsys.readouterr().out == ""
+
+
+def test_run_reports_the_model_and_its_source_before_the_first_model_call(monkeypatch, tmp_path):
+    _stub_steps(monkeypatch, tmp_path, warnings=[])
+    lines: list[str] = []
+
+    def slug_after_recording(model, job_description, name):
+        lines.append("<slug call>")
+        return "acme-engineer"
+
+    monkeypatch.setattr(pipeline, "_job_slug", slug_after_recording)
+    config = _config(tmp_path)
+    config.model_source = ModelSource.ENVIRONMENT
+
+    pipeline.run(config, progress=lines.append)
+
+    model_line = next(line for line in lines if "Model:" in line)
+    assert "ollama:placeholder" in model_line
+    assert ModelSource.ENVIRONMENT.value in model_line
+    assert lines.index(model_line) < lines.index("<slug call>")
 
 
 def test_run_returns_the_fit_loops_warnings(monkeypatch, tmp_path):

@@ -33,7 +33,7 @@ from aimu.tools import tool
 from kokua.registry import Setting, Toolset, ToolsetContext
 
 from . import pipeline
-from .config import DEFAULT_PDF_BACKEND, Config, resolve_model
+from .config import DEFAULT_PDF_BACKEND, Config, ModelSource, resolve_model
 from .io_utils import slugify
 from .pdf import check_backend
 
@@ -58,6 +58,7 @@ class Settings:
     input_dir: Path
     output_dir: Path
     model: str
+    model_source: ModelSource
     pdf_backend: str
 
 
@@ -72,10 +73,12 @@ def resolve_settings(config) -> Settings:
     """
     section = config.toolset_settings.get(TOOLSET_NAME, {})
     base = config.data_dir / TOOLSET_NAME
+    model, model_source = resolve_model(section.get("model") or None)
     return Settings(
         input_dir=Path(section.get("input_dir") or base / "input").expanduser(),
         output_dir=Path(section.get("output_dir") or base / "output").expanduser(),
-        model=resolve_model(section.get("model") or None),
+        model=model,
+        model_source=model_source,
         pdf_backend=section.get("pdf_backend") or DEFAULT_PDF_BACKEND,
     )
 
@@ -210,6 +213,7 @@ def build(ctx: ToolsetContext) -> list:
             model=settings.model,
             pdf_backend=settings.pdf_backend,
             name=name or None,
+            model_source=settings.model_source,
         )
         cancel = threading.Event()
         progress = _channel_progress(ctx.state.notify, asyncio.get_running_loop(), cancel)
@@ -261,7 +265,7 @@ def build(ctx: ToolsetContext) -> list:
         guidance = (settings.input_dir / "guidance.md").is_file()
         lines.append(f"guidance.md: {'present' if guidance else 'absent'} (optional)")
 
-        lines.append(f"Model: {settings.model}")
+        lines.append(f"Model: {settings.model} ({settings.model_source.value})")
         variable = _missing_api_key(settings.model)
         if variable:
             lines.append(f"{variable} is not set in Kokua's environment, so this model cannot be reached.")
